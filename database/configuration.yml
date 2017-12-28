@@ -1,0 +1,145 @@
+
+constants:
+    proxy_db_file: ./database/proxy.db
+    proxy_db_raw_file: ./database/proxy_raw.db
+
+    seeds_file: ./database/seeds
+    new_seeds_file: ./database/new_seeds
+
+seeds_instance:
+    content:
+        - lianjia:
+            index:
+                url:
+                    - https://bj.lianjia.com/ershoufang/haidian/pg1bp200ep600/
+                    - https://bj.lianjia.com/ershoufang/haidian/pg1bp601ep1600/
+                    - https://bj.lianjia.com/ershoufang/xicheng/pg1bp200ep1600/
+                    - https://bj.lianjia.com/ershoufang/dongcheng/pg1bp200ep1600/
+                    - https://bj.lianjia.com/ershoufang/fangshan/pg1bp200ep1600/
+                    - https://bj.lianjia.com/ershoufang/changping/pg1bp200ep450/
+                    - https://bj.lianjia.com/ershoufang/changping/pg1bp451ep1600/
+    proxy:
+        - free-proxy-list:
+            page:
+                url:
+                    - https://free-proxy-list.net/
+        - xicidaili:
+            index:
+                url:
+                    - http://www.xicidaili.com/nn/1
+        - ip181:
+            index:
+                url:
+                    - http://www.ip181.com/daili/1.html
+
+
+seeds_template:
+    content:
+        - lianjia:
+            index:
+                url:
+                loadJS : False
+                validate:
+                    - //div[@class="content "]/div[@class="leftContent"]/div[@class="resultDes clear"]
+                fields:
+                    index:
+                        xpath : //div[@class="content "]/div[@class="leftContent"]/div[@class="contentBottom clear"]/div[@class="page-box fr"]/div
+                        udf : lianjiaIndexUDF
+                    page: //div[@class="content "]/div[@class="leftContent"]/ul/li/a/@href
+            page:
+                # normally, we should not define url here, all should from index crawl result
+                url:
+                loadJS : False
+                validate:
+                    - //div[@class="sellDetailHeader"]
+                    - //div[@class="house-title"]
+                fields:
+                    type: _house
+                    city:
+                        udf: getCity
+                    status:
+                        xpath:
+                            - //div[@class="sellDetailHeader"]//h1[@class="main"]/span/text()
+                            - //div[@class="house-title"]/div[@class="wrapper"]/span/text()
+                    id:
+                        xpath:
+                            - //div[@class="houseRecord"]/span[2]/text()
+                            - (//div[@class="transaction"]/div[@class="content"]/ul//li)[1]/text()
+                        required: True
+                    price:
+                        xpath:
+                            - //div[@class="price "]/span[@class="total"]/text()
+                            - //div[@class="price isRemove"]/span[@class="total"]/text()
+                            - //div[@class="overview"]//span[@class="dealTotalPrice"]/i/text()
+                        required: True
+                    area:
+                        xpath:
+                            - //div[@class="area"]/div[@class="mainInfo"]/text()
+                            - (//div[@class="introContent"]/div[@class="base"]/div[@class="content"]//li)[3]/text()
+                    unit_price:
+                        xpath:
+                            - //div[@class="unitPrice"]/span[@class="unitPriceValue"]/text()
+                            - //div[@class="overview"]//div[@class="price"]/b/text()
+                        required: True
+                    structure_info:
+                        xpath: //div[@class="room"]/div[@class="mainInfo"]/text()
+                        udf:
+                            func: shouldNotBe
+                            values:
+                                - 车位
+                    community_name:
+                        xpath: //div[@class="communityName"]/a[@class="info "]/text()
+                    community_link: //div[@class="communityName"]/a[@class="info "]/@href
+                    district:
+                        xpath: //div[@class="areaName"]/span[@class="info"]/a[1]/text()
+                    subdistrict: //div[@class="areaName"]/span[@class="info"]/a[2]/text()
+                    ring_loc: //div[@class="areaName"]/span[2]/text()[2]
+                    fav_count:
+                        xpath:
+                            - //span[@id="favCount"]/text()
+                            - (//div[@class="overview"]/div[@class="info fr"]/div[@class="msg"]//label)[5]/text()
+                    view_count:
+                        xpath:
+                            - //span[@id="cartCount"]/text()
+                            - (//div[@class="overview"]/div[@class="info fr"]/div[@class="msg"]//label)[4]/text()
+                    room_count: (//div[@class="base"]//li)[1]/text()
+                    listed_time: (//div[@class="transaction"]//li)[1]/text()
+                    deal_period: (//div[@class="overview"]/div[@class="info fr"]/div[@class="msg"]//label)[2]/text()
+    proxy:
+        - free-proxy-list:
+            page:
+                loadJS: False
+                url:
+                fields:
+                    ip: //*[@id="proxylisttable"]/tbody//tr/td[1]/text()
+                    port: //*[@id="proxylisttable"]/tbody//tr/td[2]/text()
+        - xicidaili:
+            index:
+                url:
+                fields:
+                    page:
+                        xpath: //div[@id="body"]/div[@class="pagination"]//@href
+                        udf:
+                            func: pageListUDF
+                            end_url: http://www.xicidaili.com/nn/10
+            page:
+                url:
+                fields:
+                    ip: //table[@id="ip_list"]/tr//td[2]/text()
+                    port: //table[@id="ip_list"]/tr//td[3]/text()
+                    type: //table[@id="ip_list"]/tr//td[6]/text()
+        - ip181:
+            index:
+                url:
+                fields:
+                    page:
+                        xpath: //div[@class="panel-body"]/div[@class="row"]/div[@class="page"]//a/@href
+                        udf:
+                            func: pageListUDF
+                            end_url: http://www.ip181.com/daili/20.html
+            page:
+                url:
+                fields:
+                    ip: //div[@class="panel-body"]/div[@class="row"]//td[1]/text()
+                    port: //div[@class="panel-body"]/div[@class="row"]//td[2]/text()
+                    type: //div[@class="panel-body"]/div[@class="row"]//td[4]/text()
