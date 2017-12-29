@@ -11,26 +11,8 @@ seeds_instance:
         - lianjia:
             index:
                 url:
-                    - https://bj.lianjia.com/ershoufang/haidian/pg1bp200ep600/
-                    - https://bj.lianjia.com/ershoufang/haidian/pg1bp601ep1600/
-                    - https://bj.lianjia.com/ershoufang/xicheng/pg1bp200ep1600/
-                    - https://bj.lianjia.com/ershoufang/dongcheng/pg1bp200ep1600/
-                    - https://bj.lianjia.com/ershoufang/fangshan/pg1bp200ep1600/
-                    - https://bj.lianjia.com/ershoufang/changping/pg1bp200ep450/
-                    - https://bj.lianjia.com/ershoufang/changping/pg1bp451ep1600/
-    proxy:
-        - free-proxy-list:
-            page:
-                url:
-                    - https://free-proxy-list.net/
-        - xicidaili:
-            index:
-                url:
-                    - http://www.xicidaili.com/nn/1
-        - ip181:
-            index:
-                url:
-                    - http://www.ip181.com/daili/1.html
+                    - https://bj.lianjia.com/ershoufang/haidian/pg1bp200ep250/
+
 
 
 seeds_template:
@@ -53,6 +35,19 @@ seeds_template:
                 validate:
                     - //div[@class="sellDetailHeader"]
                     - //div[@class="house-title"]
+                normalfields:
+                    - city
+                    - id
+                    - price
+                    - area
+                    - unit_price
+                    - community_name
+                    - community_link
+                    - district
+                    - subdistrict
+                    - listed_time
+                    - fav_count
+                    - view_count
                 fields:
                     type: _house
                     city:
@@ -104,7 +99,9 @@ seeds_template:
                             - (//div[@class="overview"]/div[@class="info fr"]/div[@class="msg"]//label)[4]/text()
                     room_count: (//div[@class="base"]//li)[1]/text()
                     listed_time: (//div[@class="transaction"]//li)[1]/text()
-                    deal_period: (//div[@class="overview"]/div[@class="info fr"]/div[@class="msg"]//label)[2]/text()
+                    deal_period:
+                        xpath:
+                            - (//div[@class="overview"]/div[@class="info fr"]/div[@class="msg"]//label)[2]/text()
     proxy:
         - free-proxy-list:
             page:

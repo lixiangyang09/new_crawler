@@ -1,2 +1,7 @@
 .idea
 .venv
+__pycache__/
+tmp
+log
+database
+output

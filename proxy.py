@@ -6,12 +6,13 @@ from threading import Lock
 import logging
 from queue import Empty
 import os
-
-logger = logging.getLogger("Resources")
+from sync_set import SyncSet
+from config import ConfigService
+import util
 
 
 class Proxy:
-    def __init__(self, hash_key, ip, port, proxy_type, last_verify):
+    def __init__(self, hash_key, ip, port, proxy_type, last_verify=str(datetime.now())):
         self.ip = ip  # i.e. 127.0.0.1
         self.port = port  # i.e. 5560
         self.type = proxy_type  # i.e. 'http', 'https'
@@ -27,9 +28,12 @@ class ProxyService:
     proxy_all = {}
     # proxies that used in current program
     proxies = queue.Queue(0)  # process.Proxy instance
-
+    # already exist
+    appeared = SyncSet()
     # the lock
     lock = Lock()
+
+    logger = logging.getLogger(__name__)
 
     @classmethod
     def update_proxy(cls, proxy_instance, last_time=None):
@@ -40,7 +44,7 @@ class ProxyService:
         if (current_time - last_time) > timedelta(days=2):
             cls.lock.acquire(blocking=True, timeout=10)
             del cls.proxy_all[proxy_instance.hash_key]
-            logger.info("delete proxy: " + proxy_instance.to_string())
+            cls.logger.info("delete proxy: " + proxy_instance.to_string())
             cls.lock.release()
         else:
             # update process
@@ -53,47 +57,55 @@ class ProxyService:
     def get(cls):
         try:
             proxy_instance = cls.proxies.get(block=True, timeout=20)
+            cls.appeared.remove(proxy_instance.hash_key)
         except Empty:
-            logger.warning("no available proxy resource, please reduce the crawl seeds or add proxy resource.")
+            cls.logger.warning("no available proxy resource, please reduce the crawl seeds or add proxy resource.")
             proxy_instance = None
         return proxy_instance
 
     @classmethod
     def put(cls, proxy_instance):
-        cls.proxies.put_nowait(proxy_instance)
-        with cls.lock:
-            cls.proxy_all[proxy_instance.hash_key] = proxy_instance
+        """
+        put the proxy back and update the last available time
+        :param proxy_instance:
+        :return:
+        """
+        if not cls.appeared.exist(proxy_instance.hash_key):
+            cls.proxies.put_nowait(proxy_instance)
+            with cls.lock:
+                cls.proxy_all[proxy_instance.hash_key] = proxy_instance
+            cls.update_proxy(proxy_instance, datetime.now())
+            cls.appeared.add(proxy_instance.hash_key)
 
     @classmethod
     def start(cls):
-        if os.path.exists(conf.get_proxy_db_raw()):
-            with open(conf.get_proxy_db_raw()) as f:  # hash, process, date
+        if os.path.exists(ConfigService.get_proxy_db_raw()):
+            with open(ConfigService.get_proxy_db_raw()) as f:  # hash, process, date
                 for line in f:
                     cleaned_line = line.rstrip('\n')
                     if cleaned_line:
                         parts = cleaned_line.split(":")
-                        hash_key = helper.get_hash(cleaned_line)
-                        if not Resources.appeared.is_appeared(hash_key):
-                            proxy_instance = Proxy(hash_key, parts[0], parts[1], "http", str(datetime.now()))
-                            Resources.proxy_all[hash_key] = proxy_instance
-                            Resources.proxy_use.put(proxy_instance)
-                            Resources.appeared.add(hash_key)
-            if not Resources.proxy_all:
-                logger.warning(f"No proxy after {conf.get_proxy_db_raw()} function")
+                        hash_key = util.get_hash(cleaned_line)
+                        proxy_instance = Proxy(hash_key, parts[0], parts[1], "http")
+                        cls.put(proxy_instance)
+            if not cls.proxy_all:
+                cls.logger.warning(f"No proxy after {ConfigService.get_proxy_db_raw()} function")
         else:
-            logger.warning(f"can't find {conf.get_proxy_db_raw()} file")
+            cls.logger.warning(f"can't find {ConfigService.get_proxy_db_raw()} file")
 
-        if os.path.exists(conf.get_proxy_db()):
-            with open(conf.get_proxy_db()) as f:  # hash, process, date
+        if os.path.exists(ConfigService.get_proxy_db()):
+            with open(ConfigService.get_proxy_db()) as f:  # hash, process, date
                 for line in f:
                     cleaned_line = line.rstrip('\n')
                     if cleaned_line:
                         parts = cleaned_line.split(",")
                         proxy_instance = Proxy(parts[0], parts[1], parts[2], parts[3], parts[4])
-                        Resources.proxy_all[parts[0]] = proxy_instance
-                        Resources.proxy_use.put(proxy_instance)
-                        Resources.appeared.add(parts[0])
-            if not Resources.proxy_all:
-                logger.warning(f"No proxy after {conf.get_proxy_db()} function")
+                        cls.put(proxy_instance)
+            if not cls.proxy_all:
+                cls.logger.warning(f"No proxy after {ConfigService.get_proxy_db()} function")
         else:
-            logger.warning(f"can't find {conf.get_proxy_db()} file")
+            cls.logger.warning(f"can't find {ConfigService.get_proxy_db()} file")
+
+    @classmethod
+    def stop(cls):
+        pass

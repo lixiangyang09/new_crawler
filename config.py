@@ -2,7 +2,6 @@
 # encoding=utf8
 
 import yaml
-from datetime import datetime, date
 
 
 class ConfigService:
@@ -10,8 +9,6 @@ class ConfigService:
 
     with open(conf_path, 'r', encoding="utf-8") as ymlfile:
         instant = yaml.load(ymlfile)
-
-    start_date = str(date.today())
 
     @classmethod
     def get_instance(cls):

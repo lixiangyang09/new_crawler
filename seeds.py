@@ -8,6 +8,7 @@ from copy import deepcopy
 import os
 import queue
 from threading import Lock
+import logging
 
 
 class Field:
@@ -66,11 +67,11 @@ class Seed:
         self.fields = fields
         self.hash_key = hash_key
 
-    def update_hash_code(self):
+    def update_hash(self):
         self.hash_key = util.get_hash(self.url)
 
     def __repr__(self):
-        return self.seed_type_source + ',' + self.seed_type_target + ',' + self.url
+        return self.seed_type + ',' + self.seed_target + ',' + self.url
 
 
 class SeedsService:
@@ -80,18 +81,20 @@ class SeedsService:
     config_seeds = queue.Queue(0)
     # work queue
     work_queue = queue.Queue(0)
-    # all seeds hash key from last crawl
+    # Seed processed until now
     current_seeds = SyncSet()
     # new seeds hash key
     new_seeds = SyncSet()
     # remaining seeds hash key
     remaining_seeds = SyncSet()
     # seeds file
-    seeds_file = ConfigService.get_seeds_file() + "_" + ConfigService.start_date
+    seeds_file = ConfigService.get_seeds_file() + "_" + util.start_date
     # new_seeds_file
-    new_seeds_file = ConfigService.get_new_seeds_file() + "_" + ConfigService.start_date
+    new_seeds_file = ConfigService.get_new_seeds_file() + "_" + util.start_date
 
     _get_remaining_seeds_lock = Lock()
+
+    logger = logging.getLogger('SeedsService')
 
     @classmethod
     def start(cls):
@@ -105,10 +108,13 @@ class SeedsService:
                     for seed_target in seed_with_name[source]:
                         seed_target_part = seed_with_name[source][seed_target]
                         seed_template_tmp = Seed()
-                        for attr_name, attr_value in seed_target_part:
+                        for attr_name, attr_value in seed_target_part.items():
                             if attr_name == 'fields':
                                 attr_value = parse_fields(attr_value)
                             setattr(seed_template_tmp, attr_name, attr_value)
+                        seed_template_tmp.seed_type = seed_type
+                        seed_template_tmp.seed_target = seed_target
+                        seed_template_tmp.source = source
                         cls.template[(seed_type, seed_target, source)] = seed_template_tmp
         # load the seeds defined in configuraion file
         seeds = instance['seeds_instance']
@@ -119,19 +125,20 @@ class SeedsService:
                         seed_target_part = seed_with_name[source][seed_target]
                         urls = seed_target_part.get("url", [])
                         for url in urls:
-                            seed_template = deepcopy(cls.template[(seed_type, seed_target, source)])
+                            seed_template = cls.get_template(seed_type, seed_target, source)
                             setattr(seed_template, 'url', url)
-                            for attr_name, attr_value in seed_target_part:
+                            for attr_name, attr_value in seed_target_part.items():
                                 if attr_name == "url":
                                     continue
                                 setattr(seed_template, attr_name, attr_value)
+                            seed_template.update_hash()
                             cls.config_seeds.put_nowait(seed_template)
+                            cls.current_seeds.add(seed_template.hash_key)
         # load the seeds of last crawl
         with open(ConfigService.get_seeds_file()) as f:
             for line in f:
                 tokens = line.split(',')
                 hash_key = tokens[0]
-                cls.current_seeds.add(hash_key)
                 cls.remaining_seeds.add(hash_key)
 
     @classmethod
@@ -142,17 +149,15 @@ class SeedsService:
         os.rename(cls.new_seeds_file, ConfigService.get_new_seeds_file())
 
     @classmethod
-    def put_seed(cls, seed):
+    def put(cls, seed):
         if not cls.current_seeds.exist(seed.hash_key):
             cls.new_seeds.add(seed.hash_key)
-        else:
-            cls.remaining_seeds.remove(seed.hash_key)
-
-        cls.current_seeds.add(seed.hash_key)
-        cls.work_queue.put(seed)
+            cls.logger.info(f"Found new seed {str(seed)}")
+            cls.current_seeds.add(seed.hash_key)
+            cls.work_queue.put(seed)
 
     @classmethod
-    def get_seed(cls):
+    def get(cls):
         # get seed from work queue first
         try:
             seed = cls.work_queue.get_nowait()
@@ -167,6 +172,9 @@ class SeedsService:
                     with cls._get_remaining_seeds_lock:
                         cls._get_remaining_seeds()
                         seed = cls.work_queue.get_nowait()
+
+        if seed and cls.remaining_seeds.exist(seed.hash_key):
+            cls.remaining_seeds.remove(seed.hash_key)
         return seed
 
     @classmethod
@@ -181,7 +189,11 @@ class SeedsService:
                     seed_target = tokens[2]
                     source = tokens[3]
                     url = tokens[4]
-                    seed_template = deepcopy(cls.template[(seed_type, seed_target, source)])
+                    seed_template = cls.get_template(seed_type, seed_target, source)
                     setattr(seed_template, 'url', url)
                     cls.work_queue.put(seed_template)
                     cls.remaining_seeds.remove(hash_key)
+
+    @classmethod
+    def get_template(cls, seed_type, seed_target, source):
+        return deepcopy(cls.template[(seed_type, seed_target, source)])
