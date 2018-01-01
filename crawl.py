@@ -51,7 +51,7 @@ class CrawlService:
             if seed is None:
                 cls.semaphore.release()
                 if cls.run_context.is_running:
-                    time.sleep(1)  # maybe the running thread will generate new seed
+                    time.sleep(2)  # maybe the running thread will generate new seed
                     continue
                 else:
                     break
