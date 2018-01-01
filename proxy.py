@@ -57,7 +57,7 @@ class ProxyService:
     @classmethod
     def get(cls):
         try:
-            proxy_instance = cls.proxies.get(block=True, timeout=20)
+            proxy_instance = cls.proxies.get(block=True, timeout=5)
             cls.appeared.remove(proxy_instance.hash_key)
         except Empty:
             cls.logger.warning("no available proxy resource, please reduce the crawl seeds or add proxy resource.")
@@ -71,6 +71,8 @@ class ProxyService:
         :param proxy_instance:
         :return:
         """
+        if proxy_instance is None:
+            return
         if not cls.appeared.exist(proxy_instance.hash_key):
             cls.proxies.put_nowait(proxy_instance)
             with cls.lock:

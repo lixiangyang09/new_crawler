@@ -24,17 +24,16 @@ class RequestService:
         if load_js:
             pass
         else:
-            result = cls.normal_request(seed)
+            result = cls.normal_request(url)
         return result
 
     @classmethod
-    def normal_request(cls, seed):
+    def normal_request(cls, url):
         """
         Use proxy to request data from url
-        :param seed:
+        :param url:
         :return: status code, the new url(maybe redirect), web_content
         """
-        url = seed.url
         ua = cls.get_random_desktop_ua()
         cls.session.headers.update({'User-Agent': ua})
         request_timeout = 5
@@ -42,7 +41,7 @@ class RequestService:
         while True:
             try:
                 proxy_instance = ProxyService.get()
-                cls.logger.info(f"In processing seed {str(seed)} with proxy: {str(proxy_instance)}")
+                cls.logger.info(f"In processing seed url {str(url)} with proxy: {str(proxy_instance)}")
                 if proxy_instance:
                     proxy_data = proxy_instance.ip + ":" + proxy_instance.port
                     response = cls.session.get(url, proxies={'http': proxy_data}, timeout=request_timeout)
@@ -54,7 +53,10 @@ class RequestService:
                 if response.status_code == requests.codes.ok:
                     response_content = response.content
                     guess_encoding = chardet.detect(response_content)
-                    content = response_content.decode(guess_encoding['encoding'])
+                    if guess_encoding:
+                        content = response_content.decode(guess_encoding['encoding'])
+                    else:
+                        content = None
                     url = response.url
                     data = content
 
@@ -105,3 +107,8 @@ class RequestService:
             version=random.choice(product.get('version')),
             base_product=product.get('base_product')
         )
+
+
+if __name__ == '__main__':
+    res = RequestService.normal_request('http://www.ip181.com/daili/1.html')
+    print(res)

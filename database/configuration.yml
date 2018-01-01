@@ -20,7 +20,7 @@ seeds_instance:
             index:
                 url:
                     - http://www.ip181.com/daili/1.html
-                    
+
     content:
         - lianjia:
             index:

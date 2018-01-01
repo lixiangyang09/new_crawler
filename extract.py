@@ -21,7 +21,8 @@ class ExtractService:
     def _check_content_expected(cls, content):
         """This function used to is_appeared whether the returned content is the normal data or validation"""
         res = True
-        if content == "block" or content == "" or "未找到页面" in content \
+        if not content or content is None or content == "block" or \
+            content == "" or "未找到页面" in content \
                 or "流量异常" in content:
             res = False
         return res
