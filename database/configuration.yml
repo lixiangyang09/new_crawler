@@ -1,7 +1,7 @@
 
 constants:
-    proxy_db_file: ./database/proxy.db
-    proxy_db_raw_file: ./database/proxy_raw.db
+    proxy_db_file: ./../crawler/database/proxy.db
+    proxy_db_raw_file: ./../crawler/database/proxy_raw.db
 
     seeds_file: ./database/seeds
     new_seeds_file: ./database/new_seeds
@@ -15,7 +15,7 @@ seeds_instance:
         - xicidaili:
             index:
                 url:
-                    - http://www.xicidaili.com/nn/1
+                    - http://www.xicidaili.com/nn
         - ip181:
             index:
                 url:

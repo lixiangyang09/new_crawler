@@ -86,6 +86,8 @@ class ExtractService:
                     logger.warning(f"Can't get the field: {field}, when processing seed: {seed}."
                                    f"Please check the file: {tmp_file} for more details.")
                     return False, dict()
+                if not field_value:
+                    field_value = ""
                 data[field.name] = field_value
             data['source'] = seed.source
         cls.check_integrality(seed, data, web_content)

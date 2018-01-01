@@ -53,7 +53,7 @@ class RequestService:
                 if response.status_code == requests.codes.ok:
                     response_content = response.content
                     guess_encoding = chardet.detect(response_content)
-                    if guess_encoding:
+                    if guess_encoding['encoding']:
                         content = response_content.decode(guess_encoding['encoding'])
                     else:
                         content = None
