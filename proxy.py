@@ -20,7 +20,8 @@ class Proxy:
         self.last_verify = last_verify  # the date string, "2017-09-21 13:32:21.121321"
 
     def __repr__(self):
-        return self.hash_key + "," + self.ip + "," + self.port + "," + self.type + "," + self.last_verify
+        return str(self.hash_key) + "," + str(self.ip) + "," + str(self.port)\
+               + "," + str(self.type) + "," + str(self.last_verify)
 
 
 class ProxyService:
@@ -79,6 +80,7 @@ class ProxyService:
 
     @classmethod
     def start(cls):
+        proxy_raw_count = 0
         if os.path.exists(ConfigService.get_proxy_db_raw()):
             with open(ConfigService.get_proxy_db_raw()) as f:  # hash, process, date
                 for line in f:
@@ -88,11 +90,14 @@ class ProxyService:
                         hash_key = util.get_hash(cleaned_line)
                         proxy_instance = Proxy(hash_key, parts[0], parts[1], "http")
                         cls.put(proxy_instance)
+                        proxy_raw_count += 1
             if not cls.proxy_all:
                 cls.logger.warning(f"No proxy after {ConfigService.get_proxy_db_raw()} function")
+            else:
+                cls.logger.info(f"Totally load {str(proxy_raw_count)} raw proxies")
         else:
             cls.logger.warning(f"can't find {ConfigService.get_proxy_db_raw()} file")
-
+        proxy_db_count = 0
         if os.path.exists(ConfigService.get_proxy_db()):
             with open(ConfigService.get_proxy_db()) as f:  # hash, process, date
                 for line in f:
@@ -101,11 +106,21 @@ class ProxyService:
                         parts = cleaned_line.split(",")
                         proxy_instance = Proxy(parts[0], parts[1], parts[2], parts[3], parts[4])
                         cls.put(proxy_instance)
+                        proxy_db_count += 1
             if not cls.proxy_all:
                 cls.logger.warning(f"No proxy after {ConfigService.get_proxy_db()} function")
+            else:
+                cls.logger.info(f"Totally load {str(proxy_db_count)} proxies from {ConfigService.get_proxy_db()}")
         else:
             cls.logger.warning(f"can't find {ConfigService.get_proxy_db()} file")
 
     @classmethod
     def stop(cls):
-        pass
+        proxy_db_count = 0
+        with open(ConfigService.get_proxy_db(), 'w') as f:
+            for proxy in cls.proxy_all.values():
+                output = str(proxy) + "\n"
+                f.write(output)
+                proxy_db_count += 1
+        cls.logger.info(f"Write back {str(proxy_db_count)} proxies.")
+

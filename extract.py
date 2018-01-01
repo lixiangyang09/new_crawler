@@ -5,7 +5,7 @@
 import queue
 from lxml import html
 import util
-from store import StoreService
+from store import FileService
 import logging
 import re
 import urllib.parse
@@ -62,7 +62,7 @@ class ExtractService:
                                 field_value = cls._get_udf_result(seed, field, field_value)
                                 if not field_value:  # after udf, the field should not be empty
                                     tmp_file = str(util.get_uuid())
-                                    StoreService.save_file("tmp", tmp_file, web_content)
+                                    FileService.save_file("tmp", tmp_file, web_content)
                                     logger.warning(f"The filed value is empty after udf. The field: {field}, "
                                                    f"the seed: {seed}. "
                                                    f"Please check the file: {tmp_file} for more details.")
@@ -81,7 +81,7 @@ class ExtractService:
 
                 if field.required and not field_value:
                     tmp_file = str(util.get_uuid())
-                    StoreService.save_file("tmp", tmp_file, web_content)
+                    FileService.save_file("tmp", tmp_file, web_content)
                     logger.warning(f"Can't get the field: {field}, when processing seed: {seed}."
                                    f"Please check the file: {tmp_file} for more details.")
                     return False, dict()
@@ -92,14 +92,16 @@ class ExtractService:
 
     @classmethod
     def check_integrality(cls, seed, data, web_content):
+        if 'status' in data and data['status']:  # if status not empty, which means that the house is sold or off shelf.
+            return
         fields_need_check = getattr(seed, 'normalfields', [])
         for field in fields_need_check:
             if field in data and data[field]:
                 pass
             else:
                 tmp_file = str(util.get_uuid())
-                StoreService.save_file("tmp", tmp_file, web_content)
-                logger.warning(f"Can't get field {key} of seed {str(seed)}."
+                FileService.save_file("tmp", tmp_file, web_content)
+                logger.warning(f"Can't get field {field} of seed {str(seed)}."
                                f"Please check the web_content file {tmp_file} for more details.")
                 break
 

@@ -5,7 +5,7 @@
 import logging
 import util
 from seeds import SeedsService
-from store import StoreService
+from store import FileService, RedisService
 from proxy import Proxy, ProxyService
 import re
 
@@ -42,7 +42,8 @@ class ContentProcessor(ProcessorInterface):
         super(ContentProcessor, self).__init__('content')
 
     def process_page_data(self, data):
-        StoreService.save_data(data)
+        FileService.save_data(data)
+        RedisService.send_msg(data)
 
 
 class ProxyProcessor(ProcessorInterface):

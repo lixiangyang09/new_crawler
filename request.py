@@ -24,16 +24,17 @@ class RequestService:
         if load_js:
             pass
         else:
-            result = cls.normal_request(url)
+            result = cls.normal_request(seed)
         return result
 
     @classmethod
-    def normal_request(cls, url):
+    def normal_request(cls, seed):
         """
         Use proxy to request data from url
-        :param url:
+        :param seed:
         :return: status code, the new url(maybe redirect), web_content
         """
+        url = seed.url
         ua = cls.get_random_desktop_ua()
         cls.session.headers.update({'User-Agent': ua})
         request_timeout = 5
@@ -41,7 +42,7 @@ class RequestService:
         while True:
             try:
                 proxy_instance = ProxyService.get()
-                cls.logger.info(f"Start to process url {url} with proxy: {str(proxy_instance)}")
+                cls.logger.info(f"In processing seed {str(seed)} with proxy: {str(proxy_instance)}")
                 if proxy_instance:
                     proxy_data = proxy_instance.ip + ":" + proxy_instance.port
                     response = cls.session.get(url, proxies={'http': proxy_data}, timeout=request_timeout)

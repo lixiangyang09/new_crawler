@@ -11,10 +11,8 @@ seeds_instance:
         - lianjia:
             index:
                 url:
-                    - https://bj.lianjia.com/ershoufang/haidian/pg1bp200ep250/
-
-
-
+                    - https://bj.lianjia.com/ershoufang/haidian/pg1bp200ep220/
+                    - https://cd.lianjia.com/ershoufang/tianfuxinqu/pg1bp100ep130/
 seeds_template:
     content:
         - lianjia:
@@ -41,8 +39,6 @@ seeds_template:
                     - price
                     - area
                     - unit_price
-                    - community_name
-                    - community_link
                     - district
                     - subdistrict
                     - listed_time

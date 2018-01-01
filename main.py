@@ -13,11 +13,11 @@ if not os.path.exists('log'):
     os.mkdir('log')
 
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(thread)d %(message)s',
+                    format='%(asctime)s %(filename)15s[%(lineno)4d] %(levelname)8s %(thread)d %(message)s',
                     datefmt='%a, %d %b %Y %H:%M:%S',
                     handlers=[logging.FileHandler(
-                        filename="./log/" + str(datetime.now()).replace(" ", "_").replace(":", "_") + "_crawler.log",
-                        mode='a', encoding="utf-8")])
+                        filename="./log/" + util.start_date, # str(datetime.now()).replace(" ", "_").replace(":", "_") + "_crawler.log",
+                        mode='w', encoding="utf-8")])
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +36,7 @@ def main():
 
     # stop services
     ProxyService.stop()
-
+    SeedsService.stop()
     # generate data report
 
     # generate proxy report
