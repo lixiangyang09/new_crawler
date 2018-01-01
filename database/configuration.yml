@@ -7,6 +7,20 @@ constants:
     new_seeds_file: ./database/new_seeds
 
 seeds_instance:
+    proxy:
+        - free-proxy-list:
+            page:
+                url:
+                    - https://free-proxy-list.net/
+        - xicidaili:
+            index:
+                url:
+                    - http://www.xicidaili.com/nn/1
+        - ip181:
+            index:
+                url:
+                    - http://www.ip181.com/daili/1.html
+                    
     content:
         - lianjia:
             index:
@@ -31,19 +45,7 @@ seeds_instance:
 
                     - https://cd.lianjia.com/ershoufang/gaoxinxi1/bp0ep200/
                     - https://cd.lianjia.com/ershoufang/gaoxinxi1/bp201ep10000/
-    proxy:
-        - free-proxy-list:
-            page:
-                url:
-                    - https://free-proxy-list.net/
-        - xicidaili:
-            index:
-                url:
-                    - http://www.xicidaili.com/nn/1
-        - ip181:
-            index:
-                url:
-                    - http://www.ip181.com/daili/1.html
+
 
 seeds_template:
     content:
