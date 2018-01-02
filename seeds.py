@@ -214,7 +214,6 @@ class SeedsService:
         # get seed from work queue first
         try:
             seed = cls.work_queue.get_nowait()
-            cls.logger.warning(f"Get seed from work queue")
         except queue.Empty:
             cls.logger.warning(f"Working queue is empty now, try to get config seed.")
             # get seed from the configuration file first.

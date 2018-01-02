@@ -1,7 +1,9 @@
 certifi==2017.11.5
 chardet==3.0.4
+crcmod==1.7
 idna==2.6
 lxml==4.1.1
+oss2==2.4.0
 PyYAML==3.12
 request==0.0.22
 requests==2.18.4

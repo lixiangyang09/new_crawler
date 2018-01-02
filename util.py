@@ -5,6 +5,11 @@ import hashlib
 import uuid
 from datetime import datetime, date
 import os
+from email.mime.base import MIMEBase
+from email import encoders
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
 
 start_date = str(date.today())
 
@@ -25,4 +30,26 @@ def get_output_base_dir():
 def get_output_data_dir():
     return get_output_base_dir() + "/" + start_date
 
+
+def send_mail(from_address, passwd, to_addresses, subject, msg_body, attachments=[]):
+    msg = MIMEMultipart()
+    msg['From'] = from_address
+    msg['To'] = ",".join(to_addresses)
+    msg['Subject'] = subject
+    msg.attach(MIMEText(msg_body, 'plain'))
+
+    for file in attachments:
+        with open(file, "rb") as f:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(f.read())
+        encoders.encode_base64(part)
+        file_name = os.path.basename(file)
+        part.add_header('Content-Disposition', 'attachment', filename=('gbk', '', file_name))
+        msg.attach(part)
+
+    # smtp = smtplib.SMTP()
+    smtp = smtplib.SMTP_SSL("smtp.qq.com", 465)
+    smtp.login(from_address, passwd)
+    smtp.sendmail(from_address, to_addresses, msg.as_string())
+    smtp.quit()
 

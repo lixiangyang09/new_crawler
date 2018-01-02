@@ -23,6 +23,15 @@ class SyncSet:
             if data in self._data:
                 self._data.remove(data)
 
+    def get(self):
+        res = None
+        with self.lock:
+            for v in self._data:
+                self._data.remove(v)
+                res = v
+                break
+        return res
+
     def empty(self):
         with self.lock:
             if self._data:

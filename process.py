@@ -94,6 +94,7 @@ class ProcessService:
 
     @classmethod
     def process(cls, seed, data):
+        data['hash_code'] = seed.hash_key
         if seed.seed_type == 'proxy':
             if seed.seed_target == 'index':
                 cls.proxy_processor.process_index_data(data)

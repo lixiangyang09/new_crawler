@@ -77,7 +77,7 @@ class CrawlService:
                 else:
                     cls.logger.warning(f"Return code {str(res[0])} of seed {str(seed)}")
                 time.sleep(3)
-        except BaseException:
+        except:
             cls.logger.error(traceback.format_exc())
         finally:
             cls.semaphore.release()
