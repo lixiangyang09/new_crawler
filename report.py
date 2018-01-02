@@ -32,7 +32,7 @@ class House:
         self.view_count = 0
         self.fav_count = 0
         self.up_time = ""
-        self.hash_key = ""
+        self.hash_code = ""
         self.district = ""
         self.sub_district = ""
         self.city = ""
@@ -64,6 +64,16 @@ class BasicStatistic:
         self.down = 0
         self.inc = 0
         self.dec = 0
+
+    def __iadd__(self, ins):
+        if isinstance(ins, BasicStatistic):
+            self.total += ins.total
+            self.up += ins.up
+            self.down += ins.down
+            self.inc += ins.inc
+            self.dec += ins.dev
+        else:
+            print(f"+= . Not an instance of BasicStatistic.")
 
     def __repr__(self):
         return f"在售, {self.total}, " \
@@ -98,37 +108,20 @@ class Daily:
         return res
 
     def generate_report(self):
-        total_on_sell = 0
-        for key, value in self.districts.items():
-            total_on_sell += value.on_sell_count
+        basic_report = ""
+        for city, dis in self.districts.items():
+            total_statis = BasicStatistic()
+            for dis_name, dis_statis in dis.items():
+                total_statis += dis_statis
+            if city == 'bj':
+                basic_report += f"{city},价格区间,200-1600,str{total_statis}"
+            else:
+                basic_report += f"{city},str{total_statis}"
 
-        total_up = 0
-        for key, value in self.districts.items():
-            total_up += value.up_count
-
-        total_down = 0
-        for key, value in self.districts.items():
-            total_down += value.down_count
-
-        total_inc = 0
-        for key, value in self.districts.items():
-            total_inc += value.inc_count
-
-        total_dec = 0
-        for key, value in self.districts.items():
-            total_dec += value.dec_count
-
-        basic = ""
-        for key, value in self.districts.items():
-            basic += f"{key},价格区间,200-1600,{str(value)}\n"
-        basic += f"在售总量,{total_on_sell},涨价,{total_inc},降价{total_dec},上架,{total_up},下架{total_down}\n"
-
-        monitor = ""
-        monitor += f"种子总量:  {self.seeds_count} \n" \
-                   f"获取总量： {self.file_count} \n" \
-                   f"忽略的数据量： {self.ignore_count} \n" \
-                   f"未找到种子对应的数据量:  {self.seed_data_not_found_count} \n"
-        return basic, monitor
+            for dis_name, dis_statis in dis.items():
+                basic_report += "/n"
+                basic_report += f"{dis_name}, str{dis_statis}"
+        return basic_report
 
 
 class ReportService:
@@ -155,6 +148,8 @@ class ReportService:
 
     oss_client = OSSClient("buaacraft", "lxy", "/")
 
+    city_map = {'beijing': 'bj'}
+
     @classmethod
     def _load_cache(cls, prefix):
         if prefix == 'house':
@@ -180,6 +175,7 @@ class ReportService:
             return time
         else:
             cls.logger.warning(f"Can't find cache file {file}")
+            return ""
 
     @classmethod
     def _load_data_file(cls, date):
@@ -192,31 +188,46 @@ class ReportService:
         os.mkdir(cls.tmp_dir)
         FileService.unpack_file(data_file, cls.tmp_dir)
         # load seed file and new seed file
-        seed_file = cls.base_dir + "/" + os.path.basename(ConfigService.get_seeds_file())
-        new_seed_file = cls.base_dir + "/" + os.path.basename(ConfigService.get_new_seeds_file())
+        seed_file = cls.tmp_dir + '/' + date + "/" + os.path.basename(ConfigService.get_seeds_file())
+        new_seed_file = cls.tmp_dir + '/' + date + "/" + os.path.basename(ConfigService.get_new_seeds_file())
         with open(seed_file) as f:
             for line in f:
                 tokens = line.split(',')
-                hash_key = tokens[0]
-                cls.seeds.add(hash_key)
+                hash_code = tokens[0]
+                if hash_code:
+                    cls.seeds.add(hash_code)
 
         with open(new_seed_file) as f:
             for line in f:
                 tokens = line.split(',')
-                hash_key = tokens[0]
-                cls.new_seeds.add(hash_key)
+                hash_code = tokens[0]
+                if hash_code:
+                    cls.new_seeds.add(hash_code)
 
-        files = os.listdir(cls.tmp_dir + '/' + date)
-        return files
+        files = os.listdir(cls.tmp_dir + '/' + date + '/' + date)
+        res = [cls.tmp_dir + '/' + date + '/' + date + '/' + file for file in files]
+        return res
 
     @classmethod
     def _reset(cls):
         pass
 
     @classmethod
+    def _get_city_map(cls, city):
+        if city in cls.city_map:
+            return cls.city_map[city]
+        else:
+            return city
+
+    @classmethod
     def _parse_data_to_house(cls, file):
+        print(file)
+
         data_str = FileService.load_file(file)
         data = ast.literal_eval(data_str)
+
+        print(data_str)
+
         house = House()
         house.ind = data["id"]
         house.status = data['status']
@@ -225,9 +236,9 @@ class ReportService:
         house.total_price = float(data["price"])
         house.unit_price = float(data["unit_price"]) / 10000.0
         house.up_time = data["listed_time"]
-        house.hash_key = data['hash_code']
+        house.hash_code = data['hash_code']
         house.source = data['source']
-        house.city = data['city']
+        house.city = cls._get_city_map(data['city'])
         house.fav_count = int(data["fav_count"])
         house.view_count = int(data["view_count"])
 
@@ -254,25 +265,26 @@ class ReportService:
 
         if "下架" in house.status or "成交" in house.status:
             # because the down may be crawled multi days, so remove it.
-            if house.hash_key not in cls.down_cache_data:
+            if house.hash_code not in cls.down_cache_data:
                 tmp_dis.down += 1
                 if not house.deal_period:
                     up_time = datetime.strptime(house.up_time, '%Y-%m-%d')
-                    house.deal_period = str((cls.file_time - up_time).days)
+                    file_time = datetime.strptime(cls.file_time, '%Y-%m-%d')
+                    house.deal_period = str((file_time - up_time).days)
                 cls.daily_data.daily_house_status += str(house) + "\n"
-            cls.down_cache_data.add(house.hash_key)
-            cls.seeds_to_delete.add(house.hash_key)
+            cls.down_cache_data.add(house.hash_code)
+            cls.seeds_to_delete.add(house.hash_code)
             # remove the seed, because no need to crawl next day
         else:
             tmp_dis.total += 1
 
-            if cls.new_seeds.exist(house.hash_key):
+            if cls.new_seeds.exist(house.hash_code):
                 house.status = "新上架"
                 tmp_dis.up += 1
 
             price_now = house.total_price
-            if house.hash_key in cls.house_cache_data:
-                price_last = cls.house_cache_data[house.hash_key]['total_price']
+            if house.hash_code in cls.house_cache_data:
+                price_last = cls.house_cache_data[house.hash_code]['total_price']
                 if price_last < price_now:
                     tmp_dis.inc += 1
                     house.status = "涨价"
@@ -285,7 +297,7 @@ class ReportService:
         cls.daily_data.districts[house.city] = tmp_dis_city
         tmp_dis_city[house.district] = tmp_dis
 
-        cls.house_cur[house.hash_key] = house.__dict__  # update the data
+        cls.house_cur[house.hash_code] = house.__dict__  # update the data
 
     @classmethod
     def _send_notification(cls):
@@ -293,13 +305,14 @@ class ReportService:
         FileService.save_file(cls.tmp_dir, daily_total_house_file, cls.daily_data.daily_house_status, 'utf_8_sig')
 
         chart_address = "\n" + "曲线图：http://hkdev.yifei.me:8080/basic_statistic/" + "\n"
-        basic_report, house_monitor = cls.daily_data.generate_report()
+        basic_report = cls.daily_data.generate_report()
         # proxy_daily_report = proxy_report.gen_proxy_report()
         user_msg = f"{cls.file_time} \n" + basic_report + chart_address
 
         email_subject = f"{cls.file_time} 链家报告"
         util.send_mail("562315079@qq.com", "qlwhrvzayytcbche",
-                       ["562315079@qq.com", "kongyifei@gmail.com", "gaohangtian1003@163.com", "lbxxy@sina.com"],
+                       #["562315079@qq.com", "kongyifei@gmail.com", "gaohangtian1003@163.com", "lbxxy@sina.com"],
+                       ["562315079@qq.com"],
                        email_subject, user_msg, [cls.tmp_dir + "/" + daily_total_house_file])
 
         time.sleep(60)
@@ -312,7 +325,6 @@ class ReportService:
             total = BasicStatistic()
             for dis_name, dis_value in data.items():
                 pass
-
 
     @classmethod
     def gen_report(cls, file):
@@ -328,14 +340,15 @@ class ReportService:
         house_time = cls._load_cache('house')
         daily_time = cls._load_cache('daily')
         down_time = cls._load_cache('down')
-        if house_time == daily_time and daily_time == down_time:
+        if house_time and daily_time and down_time and \
+           house_time == daily_time and daily_time == down_time:
             cls.file_time = house_time
             cls.logger.info(f"Calculate statistics with cache of {cls.file_time}.")
         else:
             cls.logger.warning(f"Calculate statistics without cache.")
-            cls.house_cache_data = None
-            cls.daily_cache_data = None
-            cls.down_cache_data = None
+            cls.house_cache_data = dict()
+            cls.daily_cache_data = dict()
+            cls.down_cache_data = set()
 
         # process data files
         for file in data_files:
@@ -367,7 +380,7 @@ class ReportService:
             return
 
         start_time = util.start_date
-        tar_file = start_time + cls.data_file_suffix
+        tar_file = cls.base_dir + "/" + start_time + cls.data_file_suffix
         if not os.path.exists(tar_file):
             output_path = util.get_output_base_dir() + "/" + start_time
             if os.path.exists(output_path):
@@ -382,7 +395,7 @@ class ReportService:
                 # pack
                 current_dir = os.getcwd()
                 os.chdir(cls.base_dir)
-                FileService.pack_folder(tar_file, start_time, True)
+                FileService.pack_folder(os.path.basename(tar_file), start_time, True)
                 os.chdir(current_dir)
                 cls.logger.info(f"packed data of {start_time} into {tar_file}")
             else:
@@ -395,6 +408,7 @@ class ReportService:
         files = os.listdir(cls.base_dir)
         files.sort()
         res = []
+        file_time = datetime.strptime(cls.file_time, '%Y-%m-%d')
         # 2017-10-09_report_data.tar.gz
         pattern = "(\d{4})-(\d{2})-(\d{2})" + cls.data_file_suffix + "$"
         data_file_pattern = re.compile(pattern)
@@ -403,7 +417,7 @@ class ReportService:
                 end_index = tar_file.rindex(cls.data_file_suffix)
                 file_datetime_str = tar_file[:end_index]
                 file_datetime = datetime.strptime(file_datetime_str, '%Y-%m-%d')
-                if file_datetime > cls.file_time:
+                if file_datetime > file_time:
                     res.append(cls.base_dir + "/" + tar_file)
         cls.process_file_list = res
 
