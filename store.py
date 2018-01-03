@@ -9,6 +9,7 @@ import os
 import tarfile
 import re
 import oss2
+from futile.queue.redis_queue import QueueProducer, QueueConsumer
 
 
 logger = logging.getLogger("StoreService")
@@ -16,9 +17,19 @@ logger = logging.getLogger("StoreService")
 
 class RedisService:
 
+    topic = "lxy_test"
+
+    producer = QueueProducer('10.1.1.3', '6379')
+    consumer = QueueConsumer('10.1.1.3', '6379', topic, 'test')
+
     @classmethod
     def send_msg(cls, data):
-        pass
+        cls.producer.send_events(cls.topic, [data])
+
+    @classmethod
+    def receive_msg(cls):
+        events = cls.consumer.recv_events(10)
+        return events
 
 
 class FileService:
@@ -140,3 +151,10 @@ class OSSClient:
             logger.info("upload to oss successfully.")
         else:
             logger.warning("failed to upload data to oss")
+
+
+if __name__ == '__main__':
+    test_data = {'a': 1, 'b': 2}
+    RedisService.send_msg(test_data)
+    msgs = RedisService.receive_msg()
+    print(msgs)

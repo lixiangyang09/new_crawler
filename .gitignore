@@ -7,3 +7,4 @@ database
 output
 report_tmp/
 report_data/
+shell.log
