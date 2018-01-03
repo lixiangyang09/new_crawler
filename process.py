@@ -29,10 +29,10 @@ class ProcessorInterface(object):
             return
         for target, urls in data.items():
             for url in urls:
-                hash_key = util.get_hash(url)
+                hash_code = util.get_hash(url)
                 seed = SeedsService.get_template(self.indicator, target, source)
                 seed.url = url
-                seed.hash_key = hash_key
+                seed.hash_code = hash_code
                 seed.source = source
                 SeedsService.put(seed)
 
@@ -83,8 +83,8 @@ class ProxyProcessor(ProcessorInterface):
         for k in zip(ips, ports, types):
             if self.validate_ip(k[0]):
                 proxy_type = self.edit_http_type(k[2])
-                hash_key = util.get_hash(k[0] + ":" + k[1])
-                new_proxy_instance = Proxy(hash_key, k[0], k[1], proxy_type)
+                hash_code = util.get_hash(k[0] + ":" + k[1])
+                new_proxy_instance = Proxy(hash_code, k[0], k[1], proxy_type)
                 ProxyService.put(new_proxy_instance)
 
 
@@ -103,6 +103,6 @@ class ProcessService:
             if seed.seed_target == 'index':
                 cls.content_processor.process_index_data(data)
             elif seed.seed_target == 'page':
-                data['hash_code'] = seed.hash_key
+                data['hash_code'] = seed.hash_code
                 cls.content_processor.process_page_data(data)
 

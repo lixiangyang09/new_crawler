@@ -58,7 +58,7 @@ class Seed:
                  loadJS=False,
                  validate=[],
                  fields={},
-                 hash_key=""):
+                 hash_code=""):
         self.seed_type = seed_type_source
         self.seed_target = seed_type_target
         self.url = url
@@ -66,13 +66,13 @@ class Seed:
         self.loadJS = loadJS
         self.validate = validate
         self.fields = fields
-        self.hash_key = hash_key
+        self.hash_code = hash_code
 
     def update_hash(self):
-        self.hash_key = util.get_hash(self.url)
+        self.hash_code = util.get_hash(self.url)
 
     def __repr__(self):
-        return self.hash_key + ',' + self.seed_type + ',' + self.seed_target + ',' + self.source + ',' + self.url
+        return self.hash_code + ',' + self.seed_type + ',' + self.seed_target + ',' + self.source + ',' + self.url
 
 
 class SeedsService:
@@ -146,22 +146,22 @@ class SeedsService:
                             seed_template.update_hash()
                             cls._save_seeds(seed_template)
                             cls.config_seeds.put_nowait(seed_template)
-                            cls.current_seeds.add(seed_template.hash_key)
+                            cls.current_seeds.add(seed_template.hash_code)
                             configuration_seeds_count += 1
         cls.logger.info(f"Total load {str(configuration_seeds_count)} seeds from configuration file")
         # load the seeds of last crawl
         cls.logger.info("Load seeds hash of last time crawled to remaining_seeds")
         if os.path.exists(ConfigService.get_seeds_file()):
-            current_seeds_count = 0
+            last_seeds_count = 0
             with open(ConfigService.get_seeds_file()) as f:
                 for line in f:
                     tokens = line.split(',')
-                    hash_key = tokens[0]
-                    cls.remaining_seeds.add(hash_key)
-                    cls.last_seeds.add(hash_key)
-                    current_seeds_count += 1
+                    hash_code = tokens[0]
+                    cls.remaining_seeds.add(hash_code)
+                    cls.last_seeds.add(hash_code)
+                    last_seeds_count += 1
             cls.seeds_file_handle = open(ConfigService.get_seeds_file())
-            cls.logger.info(f"Total load {str(current_seeds_count)} seeds from {ConfigService.get_seeds_file()}")
+            cls.logger.info(f"Total load {str(last_seeds_count)} seeds from {ConfigService.get_seeds_file()}")
         else:
             cls.logger.warning(f"{ConfigService.get_seeds_file()} not exists.")
 
@@ -189,9 +189,9 @@ class SeedsService:
     @classmethod
     def put(cls, seed):
         cls._save_seeds(seed)
-        if not cls.current_seeds.exist(seed.hash_key):
+        if not cls.current_seeds.exist(seed.hash_code):
             cls.logger.info(f"Found new seed {str(seed)}")
-            cls.current_seeds.add(seed.hash_key)
+            cls.current_seeds.add(seed.hash_code)
             cls.work_queue.put(seed)
 
     @classmethod
@@ -201,11 +201,11 @@ class SeedsService:
         :param seed:
         :return:
         """
-        if not cls.current_seeds.exist(seed.hash_key):
+        if not cls.current_seeds.exist(seed.hash_code):
             with open(cls.seeds_file, 'a') as f:
                 f.write(str(seed) + "\n")
 
-            if not cls.last_seeds.exist(seed.hash_key):
+            if not cls.last_seeds.exist(seed.hash_code):
                 with open(cls.new_seeds_file, 'a') as f:
                     f.write(str(seed) + "\n")
 
@@ -229,8 +229,8 @@ class SeedsService:
                     with cls._get_remaining_seeds_lock:
                         seed = cls._get_remaining_seed()
 
-        if seed and cls.remaining_seeds.exist(seed.hash_key):
-            cls.remaining_seeds.remove(seed.hash_key)
+        if seed and cls.remaining_seeds.exist(seed.hash_code):
+            cls.remaining_seeds.remove(seed.hash_code)
         return seed
 
     @classmethod
@@ -238,17 +238,17 @@ class SeedsService:
         res_seed = None
         for line in cls.seeds_file_handle:
             tokens = line.split(',')
-            hash_key = tokens[0]
-            if cls.remaining_seeds.exist(hash_key) and not cls.current_seeds.exist(hash_key):
+            hash_code = tokens[0]
+            if cls.remaining_seeds.exist(hash_code) and not cls.current_seeds.exist(hash_code):
                 seed_type = tokens[1]
                 seed_target = tokens[2]
                 source = tokens[3]
                 url = tokens[4]
                 seed_template = cls.get_template(seed_type, seed_target, source)
-                seed_template.hash_key = hash_key
+                seed_template.hash_code = hash_code
                 seed_template.url = url
-                cls.remaining_seeds.remove(hash_key)
-                cls.current_seeds.add(hash_key)
+                cls.remaining_seeds.remove(hash_code)
+                cls.current_seeds.add(hash_code)
                 res_seed = seed_template
                 break
         return res_seed
