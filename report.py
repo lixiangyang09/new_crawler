@@ -524,8 +524,10 @@ class ReportService:
         output_list = os.listdir(util.get_output_base_dir())
         res = []
         for file in output_list:
+            file = util.get_output_base_dir() + '/' + file
             file_name = os.path.basename(file)
-            if os.path.isdir(file) and data_folder_pattern.match(file_name):
+            if os.path.isdir(file) \
+                    and data_folder_pattern.match(file_name):
                 file_datetime = datetime.strptime(file_name, '%Y-%m-%d')
                 if file_datetime > file_time:
                     res.append(file_name)
@@ -581,6 +583,7 @@ class ReportService:
         cls.logger.info(f"Start generating report.")
         cls.get_cache_file_time()
         pack_list = cls.get_pack_list()
+        cls.logger.info(f"Pack list: {pack_list}")
         for pack in pack_list:
             cls.pack_data(pack)
         process_files = cls.get_process_file_list()
