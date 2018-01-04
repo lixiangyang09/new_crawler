@@ -7,3 +7,5 @@ database
 output
 report_tmp/
 report_data/
+chart_data/
+report_data_backup/
