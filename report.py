@@ -30,6 +30,7 @@ logging.basicConfig(level=logging.INFO,
                         filename="./log/" + util.start_date + "_report.log", # str(datetime.now()).replace(" ", "_").replace(":", "_") + "_crawler.log",
                         mode='w', encoding="utf-8")])
 
+
 class House:
     """hs for short"""
     def __init__(self):
@@ -147,11 +148,15 @@ class MarkDict:
             return False
 
     def house_keep(self):
-        now = datetime.now()
-        for hash_code, date in self._data.items():
-            hash_date = datetime.strptime(date, '%Y-%m-%d')
-            if (now - hash_date) > timedelta(days=30):
-                del self._data[hash_code]
+        pass
+        # now = datetime.now()
+        # to_delete = []
+        # for hash_code, date in self._data.items():
+        #     hash_date = datetime.strptime(date, '%Y-%m-%d')
+        #     if (now - hash_date) > timedelta(days=30):
+        #         to_delete.append(self._data[hash_code])
+        # for hash_code in to_delete:
+        #     del self._data[hash_code]
 
 
 class ReportService:
