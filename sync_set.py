@@ -8,6 +8,11 @@ class SyncSet:
         self._data = set()
         self.lock = threading.Lock()
 
+    def __contains__(self, item):
+        with self.lock:
+            res = item in self._data
+        return res
+
     def exist(self, data):
         """True, already appeared; False, not appeared."""
         with self.lock:

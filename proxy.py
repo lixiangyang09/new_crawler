@@ -24,6 +24,75 @@ class Proxy:
                + "," + str(self.type) + "," + str(self.last_verify)
 
 
+class Status:
+    def __init__(self):
+        self.fly = True
+        self.invoke_count = 1
+        self.invoke_history = [datetime.now()]
+
+    def put(self):
+        self.fly = False
+
+    def get(self):
+        self.fly = True
+        self.invoke_count += 1
+        self.invoke_history.append(datetime.now())
+
+
+class StatusService:
+    _status = dict()
+    lock = Lock()
+
+    @classmethod
+    def get(cls, hash_code):
+        with cls.lock:
+            if hash_code in cls._status:
+                cls._status[hash_code].get()
+            else:
+                cls._status[hash_code] = Status()
+
+    @classmethod
+    def put(cls, hash_code):
+        with cls.lock:
+            if hash_code in cls._status:
+                cls._status[hash_code].put()
+
+    @classmethod
+    def report(cls):
+        total = 0
+        work = 0
+        worked = 0
+        work_count = dict()
+        worked_count = dict()
+        for hash_code, status in cls._status.items():
+            total += 1
+            if status.fly:
+                if len(status.invoke_history) > 1:
+                    worked += 1
+                    worked_count_res = worked_count.get(status.invoke_count, 0)
+                    worked_count[status.invoke_count] = worked_count_res + 1
+            else:
+                work += 1
+
+            for ind in range(1, status.invoke_count):
+                work_count_res = work_count.get(ind, {'count': 0, 'total': 0})
+                work_count_res['count'] += 1
+                work_count_res[total] += (status.invoke_history[ind] - status.invoke_history[ind-1]).seconds
+
+        report_str = f'proxy使用情况:\n ' \
+                     f'   总量:{str(total)}\n' \
+                     f'   可用:{str(work_count)}\n' \
+                     f' 曾经可用： {str(worked_count)}\n'
+        for count, statistic in worked_count.items():
+            report_str += f'   调用{str(count)}次后, {str(statistic)} 不可再使用\n'
+
+        for count, statistic in work_count.items():
+            local_count = statistic['count']
+            local_avg = statistic['total'] / local_count
+            report_str += f'调用{str(count)}次, 数量: {str(local_count)}, 平均间隔(s): {str(local_avg)}\n'
+        return report_str
+
+
 class ProxyService:
     # the process that story all current crawled proxies
     proxy_all = {}
@@ -58,6 +127,7 @@ class ProxyService:
     def get(cls):
         try:
             proxy_instance = cls.proxies.get(block=True, timeout=5)
+            StatusService.get(proxy_instance.hash_code)
             cls.appeared.remove(proxy_instance.hash_code)
         except Empty:
             cls.logger.warning("no available proxy resource, please reduce the crawl seeds or add proxy resource.")
@@ -73,12 +143,14 @@ class ProxyService:
         """
         if proxy_instance is None:
             return
-        if not cls.appeared.exist(proxy_instance.hash_code):
-            cls.proxies.put_nowait(proxy_instance)
-            with cls.lock:
+        with cls.lock:
+            if not cls.appeared.exist(proxy_instance.hash_code):
+                cls.proxies.put_nowait(proxy_instance)
                 cls.proxy_all[proxy_instance.hash_code] = proxy_instance
-            cls.update_proxy(proxy_instance, datetime.now())
-            cls.appeared.add(proxy_instance.hash_code)
+                cls.update_proxy(proxy_instance, datetime.now())
+                cls.appeared.add(proxy_instance.hash_code)
+
+                StatusService.put(proxy_instance.hash_code)
 
     @classmethod
     def start(cls):

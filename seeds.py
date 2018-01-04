@@ -155,11 +155,13 @@ class SeedsService:
             last_seeds_count = 0
             with open(ConfigService.get_seeds_file()) as f:
                 for line in f:
-                    tokens = line.split(',')
-                    hash_code = tokens[0]
-                    cls.remaining_seeds.add(hash_code)
-                    cls.last_seeds.add(hash_code)
-                    last_seeds_count += 1
+                    line_tmp = line.strip()
+                    if line_tmp:
+                        tokens = line.split(',')
+                        hash_code = tokens[0]
+                        cls.remaining_seeds.add(hash_code)
+                        cls.last_seeds.add(hash_code)
+                        last_seeds_count += 1
             cls.seeds_file_handle = open(ConfigService.get_seeds_file())
             cls.logger.info(f"Total load {str(last_seeds_count)} seeds from {ConfigService.get_seeds_file()}")
         else:
