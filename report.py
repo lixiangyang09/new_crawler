@@ -20,6 +20,12 @@ import util
 import copy
 import time
 
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(filename)15s[%(lineno)4d] %(levelname)8s %(thread)d %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S',
+                    handlers=[logging.FileHandler(
+                        filename="./log/" + util.start_date + "_report.log", # str(datetime.now()).replace(" ", "_").replace(":", "_") + "_crawler.log",
+                        mode='w', encoding="utf-8")])
 
 class House:
     """hs for short"""
@@ -407,7 +413,8 @@ class ReportService:
         update seeds by removing the off shelf seeds for next time use
         :return:
         """
-        old_seeds_file = cls.tmp_dir + '/' + cls.file_time + "/" + os.path.basename(ConfigService.get_seeds_file())
+        old_seeds_file = cls.tmp_dir + '/' + cls.file_time + "/" + \
+                         os.path.basename(ConfigService.get_seeds_file()) + '_' + cls.file_time
         new_seeds_file = ConfigService.get_seeds_file()
 
         cls.logger.info(f"Update seeds from {old_seeds_file} to {new_seeds_file}")
@@ -466,8 +473,8 @@ class ReportService:
                 target_dir = cls.base_dir + "/" + data_folder
                 if not os.path.exists(target_dir):
                     os.makedirs(target_dir)
-                shutil.copyfile(seed_file, target_dir + "/" + os.path.basename(seed_file) + '_' + data_folder)
-                shutil.copyfile(new_seed_file, target_dir + "/" + os.path.basename(new_seed_file) + '_' + data_folder)
+                shutil.copyfile(seed_file, target_dir + "/" + os.path.basename(seed_file))
+                shutil.copyfile(new_seed_file, target_dir + "/" + os.path.basename(new_seed_file))
 
                 shutil.copytree(output_path, target_dir + "/" + data_folder)
                 # pack

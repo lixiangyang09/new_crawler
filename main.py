@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(filename)15s[%(lineno)4d] %(levelname)8s %(thread)d %(message)s',
                     datefmt='%a, %d %b %Y %H:%M:%S',
                     handlers=[logging.FileHandler(
-                        filename="./log/" + util.start_date, # str(datetime.now()).replace(" ", "_").replace(":", "_") + "_crawler.log",
+                        filename="./log/" + util.start_date + "_crawl.log", # str(datetime.now()).replace(" ", "_").replace(":", "_") + "_crawler.log",
                         mode='w', encoding="utf-8")])
 logger = logging.getLogger(__name__)
 
