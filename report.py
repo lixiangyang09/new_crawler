@@ -15,9 +15,9 @@ import pickle
 import shutil
 import ast
 import re
-import time
 import util
 import copy
+import time
 
 
 class House:
@@ -71,9 +71,10 @@ class BasicStatistic:
             self.up += ins.up
             self.down += ins.down
             self.inc += ins.inc
-            self.dec += ins.dev
+            self.dec += ins.dec
         else:
             print(f"+= . Not an instance of BasicStatistic.")
+        return self
 
     def __repr__(self):
         return f"在售, {self.total}, " \
@@ -85,15 +86,12 @@ class BasicStatistic:
 
 class Daily:
     def __init__(self):
+        #  districts[city] = dict()
+        #  districts[city][dis_name] = BasicStatistic()
         self.districts = dict()
-        self.basic = BasicStatistic()
         self.file_count = 0
-        self.seeds_count = 0
-        self.ignore_count = 0
+
         self.daily_house_status = House.get_header() + "\n"
-        self.ignore_data = ""
-        self.seed_data_not_found_count = 0
-        self.seed_data_not_found = ""
 
     def to_dict(self):
         res = dict()
@@ -114,14 +112,32 @@ class Daily:
             for dis_name, dis_statis in dis.items():
                 total_statis += dis_statis
             if city == 'bj':
-                basic_report += f"{city},价格区间,200-1600,str{total_statis}"
+                basic_report += f"{city},价格区间,200-1600,{total_statis}"
             else:
-                basic_report += f"{city},str{total_statis}"
+                basic_report += f"{city},{total_statis}"
 
             for dis_name, dis_statis in dis.items():
-                basic_report += "/n"
-                basic_report += f"{dis_name}, str{dis_statis}"
+                basic_report += "\n    "
+                basic_report += f"{dis_name}, {dis_statis}"
+            self.districts[city]['total'] = total_statis
         return basic_report
+
+
+class MarkDict:
+    def __init__(self):
+        self._data = dict()
+
+    def add(self, hash_code, date):
+        self._data[hash_code] = date
+
+    def exist(self, hash_code):
+        if hash_code in self._data:
+            return True
+        else:
+            return False
+
+    def house_keep(self):
+        pass
 
 
 class ReportService:
@@ -149,15 +165,20 @@ class ReportService:
     oss_client = OSSClient("buaacraft", "lxy", "/")
 
     city_map = {'beijing': 'bj'}
+    chart_data_path = "chart_data"
+    process_file_list = []
 
     @classmethod
     def _load_cache(cls, prefix):
+        cls.logger.info(f"load cache of {prefix}")
         if prefix == 'house':
             file = cls.house_cache_file
         elif prefix == 'daily':
             file = cls.daily_cache_file
         elif prefix == 'down':
             file = cls.down_cache_file
+
+        file = cls.base_dir + '/' + file
 
         cls.logger.info(f"Try to load cache {file}.")
         if os.path.exists(file):
@@ -179,6 +200,7 @@ class ReportService:
 
     @classmethod
     def _load_data_file(cls, date):
+        cls.logger.info(f"Load seeds hash and get the data file list.")
         data_file = cls.base_dir + '/' + date + cls.data_file_suffix
         if not os.path.exists(data_file):
             cls.logger.error(f"Data file {data_file} not exists! Can't generate report.")
@@ -188,20 +210,35 @@ class ReportService:
         os.mkdir(cls.tmp_dir)
         FileService.unpack_file(data_file, cls.tmp_dir)
         # load seed file and new seed file
+        # Just in order to be compatible with the old crawler package
+        seed_file_old_version = cls.tmp_dir + '/' + date + '/content_page_seed_list'
         seed_file = cls.tmp_dir + '/' + date + "/" + os.path.basename(ConfigService.get_seeds_file())
+        if os.path.exists(seed_file_old_version):
+            if os.path.exists(seed_file):
+                os.remove(seed_file)
+            shutil.copy(seed_file_old_version, seed_file)
+
+        new_seed_file_old_version = cls.tmp_dir + '/' + date + '/content_page_seed_list_new'
         new_seed_file = cls.tmp_dir + '/' + date + "/" + os.path.basename(ConfigService.get_new_seeds_file())
+        if os.path.exists(new_seed_file_old_version):
+            if os.path.exists(new_seed_file):
+                os.remove(new_seed_file)
+            shutil.copy(new_seed_file_old_version, new_seed_file)
+
         with open(seed_file) as f:
             for line in f:
-                tokens = line.split(',')
-                hash_code = tokens[0]
-                if hash_code:
+                line_tmp = line.strip()
+                if line_tmp:
+                    tokens = line.split(',')
+                    hash_code = tokens[0]
                     cls.seeds.add(hash_code)
 
         with open(new_seed_file) as f:
             for line in f:
-                tokens = line.split(',')
-                hash_code = tokens[0]
-                if hash_code:
+                line_tmp = line.strip()
+                if line_tmp:
+                    tokens = line.split(',')
+                    hash_code = tokens[0]
                     cls.new_seeds.add(hash_code)
 
         files = os.listdir(cls.tmp_dir + '/' + date + '/' + date)
@@ -210,7 +247,11 @@ class ReportService:
 
     @classmethod
     def _reset(cls):
-        pass
+        cls.logger.info(f"Reset parameters.")
+        cls.seeds = SyncSet()
+        cls.new_seeds = SyncSet()
+        cls.daily_data = Daily()
+        cls.seeds_to_delete = SyncSet()
 
     @classmethod
     def _get_city_map(cls, city):
@@ -221,12 +262,8 @@ class ReportService:
 
     @classmethod
     def _parse_data_to_house(cls, file):
-        print(file)
-
         data_str = FileService.load_file(file)
         data = ast.literal_eval(data_str)
-
-        print(data_str)
 
         house = House()
         house.ind = data["id"]
@@ -258,7 +295,7 @@ class ReportService:
     @classmethod
     def _process_file(cls, file):
         house = cls._parse_data_to_house(file)
-
+        cls.logger.info(f"Processing {file} with data hash {house.hash_code}")
         cls.daily_data.file_count += 1
         tmp_dis_city = cls.daily_data.districts.get(house.city, dict())
         tmp_dis = tmp_dis_city.get(house.district, BasicStatistic())
@@ -301,82 +338,115 @@ class ReportService:
 
     @classmethod
     def _send_notification(cls):
-        daily_total_house_file = "今日房源情况.csv"
+        cls.logger.info(f"Send notification.")
+        daily_total_house_file = cls.file_time + "_房源情况.csv"
         FileService.save_file(cls.tmp_dir, daily_total_house_file, cls.daily_data.daily_house_status, 'utf_8_sig')
 
         chart_address = "\n" + "曲线图：http://hkdev.yifei.me:8080/basic_statistic/" + "\n"
         basic_report = cls.daily_data.generate_report()
-        # proxy_daily_report = proxy_report.gen_proxy_report()
+        ## proxy_daily_report = proxy_report.gen_proxy_report()
+
         user_msg = f"{cls.file_time} \n" + basic_report + chart_address
 
-        email_subject = f"{cls.file_time} 链家报告"
-        util.send_mail("562315079@qq.com", "qlwhrvzayytcbche",
-                       #["562315079@qq.com", "kongyifei@gmail.com", "gaohangtian1003@163.com", "lbxxy@sina.com"],
-                       ["562315079@qq.com"],
-                       email_subject, user_msg, [cls.tmp_dir + "/" + daily_total_house_file])
-
-        time.sleep(60)
+        email_subject = f"{cls.file_time} 链家报告 test of new crawler"
+        # util.send_mail("562315079@qq.com", "qlwhrvzayytcbche",
+        #                #["562315079@qq.com", "kongyifei@gmail.com", "gaohangtian1003@163.com", "lbxxy@sina.com"],
+        #                ["562315079@qq.com"],
+        #                email_subject, user_msg, [cls.tmp_dir + "/" + daily_total_house_file])
+        print(basic_report)
+        time.sleep(20)
 
     @classmethod
     def _gen_char_data(cls):
+        wanted_order = ['total', '海淀', '西城', '东城', '房山', '']
         template = {'x_data': [], 'on': [], 'up': [], 'down': [], 'inc': [], 'dec': []}
-        for city, data in cls.daily_data.districts.items():
-            districts = {'total': copy.deepcopy(template)}
-            total = BasicStatistic()
-            for dis_name, dis_value in data.items():
-                pass
+        result_districts = dict()
+        for file_date, data in cls.daily_cache_data.items():
+            for city, districts in data.items():
+                if city not in result_districts:
+                    result_districts[city] = dict()
+                city_districts = result_districts[city]
+                for dis_name, dis_value in districts.items():
+                    if dis_name not in city_districts:
+                        city_districts[dis_name] = copy.deepcopy(template)
+                        continue  # ignore the data of first day, because all the data is marked as up.
+                    city_districts[dis_name]['x_data'].append(file_date)
+                    city_districts[dis_name]['on'].append(dis_value.total)
+                    city_districts[dis_name]['up'].append(dis_value.up)
+                    city_districts[dis_name]['down'].append(dis_value.down)
+                    city_districts[dis_name]['inc'].append(dis_value.inc)
+                    city_districts[dis_name]['dec'].append(dis_value.dec)
+
+        # Reorder
+        for city, data in result_districts.items():
+            ordered_data = []
+            for dis_name in wanted_order:
+                if dis_name in data:
+                    display_name = dis_name
+                    if display_name == '':
+                        display_name = 'abnormal'
+                    ordered_data.append((display_name, data[dis_name]))
+            if not os.path.exists(cls.chart_data_path):
+                os.makedirs(cls.chart_data_path)
+            chart_data_file = cls.chart_data_path + '/' + city
+            with open(chart_data_file, "wb") as f:
+                pickle.dump(ordered_data, f)
+            shutil.copy(chart_data_file, chart_data_file + '_' + cls.file_time)
 
     @classmethod
-    def gen_report(cls, file):
-        filename = os.path.basename(file)
-        end_index = filename.rindex(cls.data_file_suffix)
-        date = filename[:end_index]
-        # reset parameters
-        cls._reset()
-        # check and unpack tar file
-        data_files = cls._load_data_file(date)
+    def _update_seeds(cls):
+        """
+        update seeds by removing the off shelf seeds for next time use
+        :return:
+        """
+        old_seeds_file = cls.tmp_dir + '/' + cls.file_time + "/" + os.path.basename(ConfigService.get_seeds_file())
+        new_seeds_file = ConfigService.get_seeds_file()
 
-        # load cache
-        house_time = cls._load_cache('house')
-        daily_time = cls._load_cache('daily')
-        down_time = cls._load_cache('down')
-        if house_time and daily_time and down_time and \
-           house_time == daily_time and daily_time == down_time:
-            cls.file_time = house_time
-            cls.logger.info(f"Calculate statistics with cache of {cls.file_time}.")
-        else:
-            cls.logger.warning(f"Calculate statistics without cache.")
-            cls.house_cache_data = dict()
-            cls.daily_cache_data = dict()
-            cls.down_cache_data = set()
+        cls.logger.info(f"Update seeds from {old_seeds_file} to {new_seeds_file}")
 
-        # process data files
-        for file in data_files:
-            cls._process_file(file)
+        with open(old_seeds_file) as in_file:
+            with open(new_seeds_file, 'w') as out_file:
+                for line in in_file:
+                    tmp_line = line.strip()
+                    if tmp_line:
+                        hash_code = tmp_line.split(',')[0]
+                        if not cls.seeds_to_delete.exist(hash_code):
+                            out_file.write(line)
+        if os.path.exists(ConfigService.get_new_seeds_file()):
+            os.remove(ConfigService.get_new_seeds_file())
 
-        # send email
-        cls._send_notification()
-        # upload today's data
-        cls.oss_client.upload_file(file)
-
-        # generate char data
-        cls._gen_char_data()
-
-        # update the seeds file
+    @classmethod
+    def _save_cache(cls):
+        cls.logger.info(f"Save cache.")
+        cls.daily_cache_data[cls.file_time] = cls.daily_data.districts
+        with open(cls.base_dir + '/' + cls.house_cache_file, "wb") as f:
+            pickle.dump(dict(time=cls.file_time, data=cls.house_cur), f)
+        with open(cls.base_dir + '/' + cls.daily_cache_file, "wb") as f:
+            pickle.dump(dict(time=cls.file_time, data=cls.daily_cache_data), f)
+        with open(cls.base_dir + '/' + cls.down_cache_file, "wb") as f:
+            pickle.dump(dict(time=cls.file_time, data=cls.down_cache_data), f)
+        shutil.copy(cls.base_dir + '/' + cls.house_cache_file,
+                    cls.base_dir + '/' + cls.house_cache_file + '_' + cls.file_time)
+        shutil.copy(cls.base_dir + '/' + cls.daily_cache_file,
+                    cls.base_dir + '/' + cls.daily_cache_file + '_' + cls.file_time)
+        shutil.copy(cls.base_dir + '/' + cls.down_cache_file,
+                    cls.base_dir + '/' + cls.down_cache_file + '_' + cls.file_time)
+        cls.logger.info("Saving cache files.")
 
     @classmethod
     def pack_today_data(cls):
         # 1. seed_list
         # 2. seed_list_new
         # 3. daily crawled data
+        cls.logger.info(f"Ready to pack the data of {util.start_date}")
         seed_file = ConfigService.get_seeds_file()
         if not os.path.exists(seed_file):
-            cls.logger.warning(f"{seed_file} not exists")
+            cls.logger.warning(f"{seed_file} not exists, continue without pack today's data.")
             return
 
         new_seed_file = ConfigService.get_new_seeds_file()
         if not os.path.exists(new_seed_file):
-            cls.logger.warning(f"{new_seed_file} not exists")
+            cls.logger.warning(f"{new_seed_file} not exists, continue without pack today's data.")
             return
 
         start_time = util.start_date
@@ -399,7 +469,7 @@ class ReportService:
                 os.chdir(current_dir)
                 cls.logger.info(f"packed data of {start_time} into {tar_file}")
             else:
-                cls.logger.warning(f"path {output_path} not exists")
+                cls.logger.warning(f"data path {output_path} not exists, continue without pack today's data.")
         else:
             cls.logger.info(f"{tar_file} already exist")
 
@@ -407,7 +477,6 @@ class ReportService:
     def get_process_file_list(cls):
         files = os.listdir(cls.base_dir)
         files.sort()
-        res = []
         file_time = datetime.strptime(cls.file_time, '%Y-%m-%d')
         # 2017-10-09_report_data.tar.gz
         pattern = "(\d{4})-(\d{2})-(\d{2})" + cls.data_file_suffix + "$"
@@ -418,17 +487,83 @@ class ReportService:
                 file_datetime_str = tar_file[:end_index]
                 file_datetime = datetime.strptime(file_datetime_str, '%Y-%m-%d')
                 if file_datetime > file_time:
-                    res.append(cls.base_dir + "/" + tar_file)
-        cls.process_file_list = res
+                    cls.process_file_list.append(cls.base_dir + "/" + tar_file)
+        cls.logger.info(f"The process file list is: {cls.process_file_list}")
+
+    @classmethod
+    def get_cache_file_time(cls):
+        # load cache
+        house_time = cls._load_cache('house')
+        daily_time = cls._load_cache('daily')
+        down_time = cls._load_cache('down')
+        if house_time and daily_time and down_time and \
+           house_time == daily_time and daily_time == down_time:
+            cls.file_time = house_time
+            cls.logger.info(f"Calculate statistics with cache of {cls.file_time}.")
+            cls.house_cache_data = dict()
+            cls.daily_cache_data = dict()
+            cls.down_cache_data = set()
+        else:
+            cls.logger.warning(f"Calculate statistics without cache.")
+
+    @classmethod
+    def gen_report(cls, file):
+        filename = os.path.basename(file)
+        end_index = filename.rindex(cls.data_file_suffix)
+        date = filename[:end_index]
+
+        cls.file_time = date
+        cls.logger.info(f"the file time is {cls.file_time}")
+        # reset parameters
+        cls._reset()
+        # check and unpack tar file
+        data_files = cls._load_data_file(date)
+
+        # load cache
+        house_time = cls._load_cache('house')
+        daily_time = cls._load_cache('daily')
+        down_time = cls._load_cache('down')
+        if house_time and daily_time and down_time and \
+           house_time == daily_time and daily_time == down_time:
+            cls.logger.info(f"Calculate statistics with cache of {cls.file_time}.")
+        else:
+            cls.logger.warning(f"Calculate statistics without cache.")
+            cls.house_cache_data = dict()
+            cls.daily_cache_data = dict()
+            cls.down_cache_data = set()
+
+        # process data files
+        for file in data_files:
+            cls._process_file(file)
+
+        # send email
+        cls._send_notification()
+
+        # save cache
+        cls._save_cache()
+        # update seeds
+        cls._update_seeds()
+
+        # upload today's data
+        # cls.oss_client.upload_file(file)
+
+        # generate char data
+        cls._gen_char_data()
 
     @classmethod
     def work(cls):
+        cls.logger.info(f"Start generating report.")
+        cls.get_cache_file_time()
         cls.pack_today_data()
         cls.get_process_file_list()
+        if not cls.process_file_list:
+            cls.logger.warning(f"No need to generate report, because of the data is not newer than cache.")
         for file in cls.process_file_list:
+            cls.logger.info(f"Begin to process file {file}")
             cls.gen_report(file)
 
 
 if __name__ == '__main__':
     ReportService.work()
+
 
