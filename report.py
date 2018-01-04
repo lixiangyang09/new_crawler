@@ -20,6 +20,9 @@ import util
 import copy
 import time
 
+if not os.path.exists('log'):
+    os.mkdir('log')
+
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(filename)15s[%(lineno)4d] %(levelname)8s %(thread)d %(message)s',
                     datefmt='%a, %d %b %Y %H:%M:%S',
@@ -300,6 +303,9 @@ class ReportService:
         house.sub_district = data['subdistrict']
         house.cmt_id = cmt_id
         house.cmt_link = cmt_link
+        if not house.district:
+            cls.logger.error(f"Abnormal data: {house}")
+
         return house
 
     @classmethod
@@ -400,7 +406,6 @@ class ReportService:
                     display_name = dis_name
                     if display_name == '':
                         display_name = 'abnormal'
-                        cls.logger.error(f"Abnormal data:  {data[dis_name]}")
                     ordered_data.append((display_name, data[dis_name]))
             if not os.path.exists(cls.chart_data_path):
                 os.makedirs(cls.chart_data_path)
