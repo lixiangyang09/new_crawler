@@ -17,7 +17,6 @@ import ast
 import re
 import util
 import copy
-import math
 import time
 
 
@@ -124,6 +123,23 @@ class Daily:
         return basic_report
 
 
+class MarkDict:
+    def __init__(self):
+        self._data = dict()
+
+    def add(self, hash_code, date):
+        self._data[hash_code] = date
+
+    def exist(self, hash_code):
+        if hash_code in self._data:
+            return True
+        else:
+            return False
+
+    def house_keep(self):
+        pass
+
+
 class ReportService:
     logger = logging.getLogger(__name__)
     data_file_suffix = "_report_data.tar.gz"
@@ -211,16 +227,18 @@ class ReportService:
 
         with open(seed_file) as f:
             for line in f:
-                tokens = line.split(',')
-                hash_code = tokens[0]
-                if hash_code:
+                line_tmp = line.strip()
+                if line_tmp:
+                    tokens = line.split(',')
+                    hash_code = tokens[0]
                     cls.seeds.add(hash_code)
 
         with open(new_seed_file) as f:
             for line in f:
-                tokens = line.split(',')
-                hash_code = tokens[0]
-                if hash_code:
+                line_tmp = line.strip()
+                if line_tmp:
+                    tokens = line.split(',')
+                    hash_code = tokens[0]
                     cls.new_seeds.add(hash_code)
 
         files = os.listdir(cls.tmp_dir + '/' + date + '/' + date)
