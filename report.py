@@ -447,7 +447,7 @@ class ReportService:
         # 1. seed_list
         # 2. seed_list_new
         # 3. daily crawled data
-        cls.logger.info(f"Ready to pack the data of {util.start_date}")
+        cls.logger.info(f"Ready to pack the data folder {data_folder}")
         seed_file = ConfigService.get_seeds_file() + '_' + data_folder
         if not os.path.exists(seed_file):
             cls.logger.warning(f"{seed_file} not exists, continue without pack today's data.")
@@ -475,7 +475,7 @@ class ReportService:
                 os.chdir(cls.base_dir)
                 FileService.pack_folder(os.path.basename(tar_file), data_folder, True)
                 os.chdir(current_dir)
-                cls.logger.info(f"packed data of {start_time} into {tar_file}")
+                cls.logger.info(f"packed data folder of {data_folder} into {tar_file}")
             else:
                 cls.logger.warning(f"data path {output_path} not exists, continue without pack today's data.")
         else:
