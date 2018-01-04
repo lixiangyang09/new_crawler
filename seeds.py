@@ -94,14 +94,15 @@ class SeedsService:
     # new_seeds_file
     new_seeds_file = ConfigService.get_new_seeds_file() + "_" + util.start_date
 
-    _get_remaining_seeds_lock = Lock()
-
     logger = logging.getLogger('SeedsService')
 
     if os.path.exists(seeds_file):
         os.remove(seeds_file)
     if os.path.exists(new_seeds_file):
         os.remove(new_seeds_file)
+
+    _save_lock = Lock()
+    _get_remaining_seeds_lock = Lock()
 
     @classmethod
     def start(cls):
@@ -203,13 +204,14 @@ class SeedsService:
         :param seed:
         :return:
         """
-        if not cls.current_seeds.exist(seed.hash_code):
-            with open(cls.seeds_file, 'a') as f:
-                f.write(str(seed) + "\n")
-
-            if not cls.last_seeds.exist(seed.hash_code):
-                with open(cls.new_seeds_file, 'a') as f:
+        with cls._save_lock:
+            if not cls.current_seeds.exist(seed.hash_code):
+                with open(cls.seeds_file, 'a') as f:
                     f.write(str(seed) + "\n")
+
+                if not cls.last_seeds.exist(seed.hash_code):
+                    with open(cls.new_seeds_file, 'a') as f:
+                        f.write(str(seed) + "\n")
 
     @classmethod
     def get(cls):
@@ -249,7 +251,7 @@ class SeedsService:
                 seed_template = cls.get_template(seed_type, seed_target, source)
                 seed_template.hash_code = hash_code
                 seed_template.url = url
-                cls.remaining_seeds.remove(hash_code)
+                cls._save_seeds(seed_template)  # save the seed to file for next time use
                 cls.current_seeds.add(hash_code)
                 res_seed = seed_template
                 break

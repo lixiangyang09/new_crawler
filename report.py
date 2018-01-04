@@ -361,7 +361,7 @@ class ReportService:
     def _send_notification(cls):
         cls.logger.info(f"Send notification.")
         daily_total_house_file = cls.file_time + "_house_status.csv"
-        FileService.save_file(cls.tmp_dir, daily_total_house_file, cls.daily_data.daily_house_status, 'utf_8_sig')
+        FileService.save_file(cls.base_dir, daily_total_house_file, cls.daily_data.daily_house_status, 'utf_8_sig')
 
         chart_address = "\n" + "曲线图：http://hkdev.yifei.me:8080/basic_statistic/" + "\n"
         basic_report = cls.daily_data.generate_report()
