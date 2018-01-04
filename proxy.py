@@ -41,21 +41,18 @@ class Status:
 
 class StatusService:
     _status = dict()
-    lock = Lock()
 
     @classmethod
     def get(cls, hash_code):
-        with cls.lock:
-            if hash_code in cls._status:
-                cls._status[hash_code].get()
-            else:
-                cls._status[hash_code] = Status()
+        if hash_code in cls._status:
+            cls._status[hash_code].get()
+        else:
+            cls._status[hash_code] = Status()
 
     @classmethod
     def put(cls, hash_code):
-        with cls.lock:
-            if hash_code in cls._status:
-                cls._status[hash_code].put()
+        if hash_code in cls._status:
+            cls._status[hash_code].put()
 
     @classmethod
     def report(cls):
@@ -106,22 +103,18 @@ class ProxyService:
     logger = logging.getLogger(__name__)
 
     @classmethod
-    def update_proxy(cls, proxy_instance, last_time=None):
+    def _update_proxy(cls, proxy_instance, last_time=None):
         if last_time is None:
             last_time = datetime.strptime(proxy_instance.last_verify, '%Y-%m-%d %H:%M:%S.%f')
         current_time = datetime.now()
         # the process can't used in two days, delete it
         if (current_time - last_time) > timedelta(days=2):
-            cls.lock.acquire(blocking=True, timeout=10)
             del cls.proxy_all[proxy_instance.hash_code]
             cls.logger.info("delete proxy: " + proxy_instance.to_string())
-            cls.lock.release()
         else:
             # update process
-            cls.lock.acquire(blocking=True, timeout=10)
             proxy_instance.last_verify = str(last_time)
             cls.proxy_all[proxy_instance.hash_code] = proxy_instance
-            cls.lock.release()
 
     @classmethod
     def get(cls):
@@ -147,7 +140,7 @@ class ProxyService:
             if not cls.appeared.exist(proxy_instance.hash_code):
                 cls.proxies.put_nowait(proxy_instance)
                 cls.proxy_all[proxy_instance.hash_code] = proxy_instance
-                cls.update_proxy(proxy_instance, datetime.now())
+                cls._update_proxy(proxy_instance, datetime.now())
                 cls.appeared.add(proxy_instance.hash_code)
 
                 StatusService.put(proxy_instance.hash_code)
@@ -198,3 +191,12 @@ class ProxyService:
                 proxy_db_count += 1
         cls.logger.info(f"Write back {str(proxy_db_count)} proxies.")
 
+        email_subject = f"{cls.file_time} proxy report"
+        util.send_mail("562315079@qq.com", "qlwhrvzayytcbche",
+                       ["562315079@qq.com"],
+                       email_subject, cls.generate_report())
+        cls.logger.info(f"Finish sending proxy report.")
+
+    @classmethod
+    def generate_report(cls):
+        return StatusService.report()

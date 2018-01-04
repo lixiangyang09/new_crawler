@@ -63,9 +63,10 @@ class RequestService:
                 # put the good proxy back into queue for next time use
                 ProxyService.put(proxy_instance)
                 break
-            # current process doesn't, we need to change another process instance to crawl the same seed
+            # current proxy doesn't work, we need to change another proxy instance to crawl the same seed
             except requests.exceptions.RequestException:
-                ProxyService.update_proxy(proxy_instance)
+                pass
+                # ProxyService.update_proxy(proxy_instance)
                 # logger.warning(traceback.format_exc())
                 # logger.warning(f"the seeds {seed.url} with the RequestException exception.")
                 # traceback.print_exc()

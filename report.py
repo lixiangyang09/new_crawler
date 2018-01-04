@@ -354,7 +354,6 @@ class ReportService:
 
         chart_address = "\n" + "曲线图：http://hkdev.yifei.me:8080/basic_statistic/" + "\n"
         basic_report = cls.daily_data.generate_report()
-        proxy_daily_report = StatusService.report()
 
         user_msg = f"{cls.file_time} \n" + basic_report + chart_address
 
@@ -364,7 +363,7 @@ class ReportService:
         #                ["562315079@qq.com"],
         #                email_subject, user_msg, [cls.tmp_dir + "/" + daily_total_house_file])
 
-        developer_msg = user_msg + '\n' + proxy_daily_report
+        developer_msg = user_msg + '\n'
 
         print(email_subject + '\n')
         print(developer_msg)
@@ -372,7 +371,9 @@ class ReportService:
 
     @classmethod
     def _gen_char_data(cls):
-        wanted_order = ['total', '海淀', '西城', '东城', '房山', '']
+        wanted_order = ['total', '海淀', '西城', '东城', '房山',
+                        '高新西', '天府新区', '武侯', '成华', '金牛', '青羊', '锦江', '']
+
         template = {'x_data': [], 'on': [], 'up': [], 'down': [], 'inc': [], 'dec': []}
         result_districts = dict()
         for file_date, data in cls.daily_cache_data.items():
@@ -399,6 +400,7 @@ class ReportService:
                     display_name = dis_name
                     if display_name == '':
                         display_name = 'abnormal'
+                        cls.logger.error(f"Abnormal data:  {data[dis_name]}")
                     ordered_data.append((display_name, data[dis_name]))
             if not os.path.exists(cls.chart_data_path):
                 os.makedirs(cls.chart_data_path)
@@ -466,6 +468,9 @@ class ReportService:
             return
 
         tar_file = cls.base_dir + "/" + data_folder + cls.data_file_suffix
+        if os.path.exists(tar_file):
+            cls.logger.warning(f"File {tar_file} already exist, no need to pack again.")
+            return
         if not os.path.exists(tar_file):
             output_path = util.get_output_base_dir() + "/" + data_folder
             if os.path.exists(output_path):
