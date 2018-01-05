@@ -10,14 +10,21 @@ class SyncSet:
 
     def __contains__(self, item):
         with self.lock:
-            res = item in self._data
-        return res
+            return item in self._data
+
+    def __delitem__(self, data):
+        with self.lock:
+            if data in self._data:
+                self._data.remove(data)
+
+    def __nonzero__(self):
+        with self.lock:
+            return bool(self._data)
 
     def exist(self, data):
         """True, already appeared; False, not appeared."""
         with self.lock:
-            result = data in self._data
-        return result
+            return data in self._data
 
     def add(self, data):
         with self.lock:
@@ -39,7 +46,4 @@ class SyncSet:
 
     def empty(self):
         with self.lock:
-            if self._data:
-                return False
-            else:
-                return True
+            return bool(self._data)

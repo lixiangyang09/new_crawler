@@ -53,3 +53,12 @@ def send_mail(from_address, passwd, to_addresses, subject, msg_body, attachments
     smtp.sendmail(from_address, to_addresses, msg.as_string())
     smtp.quit()
 
+
+def get_line_hash(line):
+    res = None
+    line_tmp = line.strip()
+    if line_tmp:
+        tokens = line_tmp.split(',')
+        if len(tokens) > 1:
+            res = tokens[0]
+    return res
