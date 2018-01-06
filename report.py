@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from store import FileService, OSSClient
 from config import ConfigService
 from cache import CacheService
-from sync_set import SyncSet
 import logging
 import os
 import pickle
@@ -76,6 +75,13 @@ class BasicStatistic:
         self.inc = 0
         self.dec = 0
 
+    def reset(self):
+        self.total = 0
+        self.up = 0
+        self.down = 0
+        self.inc = 0
+        self.dec = 0
+
     def __iadd__(self, ins):
         if isinstance(ins, BasicStatistic):
             self.total += ins.total
@@ -119,22 +125,15 @@ class Daily:
     def generate_report(self):
         basic_report = ""
         for city, dis in self.districts.items():
-            total_statis = BasicStatistic()
-            for dis_name, dis_statis in dis.items():
-                total_statis += dis_statis
+            total_statis = self.districts[city]['total']
             if city == 'bj':
-                basic_report += f"{city},价格区间,200-1600,{total_statis}"
+                basic_report += f"{city},价格区间,200-1600 \n"
             else:
                 basic_report += f"{city},{total_statis}"
-
             for dis_name, dis_statis in dis.items():
                 basic_report += "\n    "
                 basic_report += f"{dis_name}, {dis_statis}"
-            self.districts[city]['total'] = total_statis
         return basic_report
-
-
-
 
 
 class ReportService:
@@ -143,20 +142,19 @@ class ReportService:
 
     tmp_dir = 'report_tmp'
     base_dir = 'report_data'
-    chart_data = 'chart_data'
 
     num_re = r"\d*.\d+|\d+"
 
     daily_data = Daily()
 
-    seeds_to_delete = SyncSet()
+    seeds_to_delete = set()
 
     oss_client = OSSClient("buaacraft", "lxy", "/")
 
     city_map = {'beijing': 'bj'}
     chart_data_path = "chart_data"
 
-    new_seeds = SyncSet()
+    new_seeds = set()
 
     file_time = ''
 
@@ -167,9 +165,9 @@ class ReportService:
         if not os.path.exists(data_file):
             cls.logger.error(f"Data file {data_file} not exists! Can't generate report.")
             return
-        if os.path.exists(cls.tmp_dir):
-            shutil.rmtree(cls.tmp_dir)
-        os.mkdir(cls.tmp_dir)
+        if os.path.exists(cls.tmp_dir + '/' + date):
+            shutil.rmtree(cls.tmp_dir + '/' + date)
+
         FileService.unpack_file(data_file, cls.tmp_dir)
         # load seed file and new seed file
         # Just in order to be compatible with the old crawler package
@@ -181,7 +179,9 @@ class ReportService:
             shutil.copy(seed_file_old_version, seed_file)
 
         new_seed_file_old_version = cls.tmp_dir + '/' + date + '/content_page_seed_list_new'
-        new_seed_file = cls.tmp_dir + '/' + date + "/" + os.path.basename(ConfigService.get_new_seeds_file()) + '_' + date
+        new_seed_file = cls.tmp_dir + '/' + date + "/" + \
+            os.path.basename(ConfigService.get_new_seeds_file()) + '_' + date
+
         if os.path.exists(new_seed_file_old_version):
             if os.path.exists(new_seed_file):
                 os.remove(new_seed_file)
@@ -248,6 +248,7 @@ class ReportService:
         cls.logger.info(f"Processing {file} with data hash {house.hash_code}")
         cls.daily_data.file_count += 1
         tmp_dis_city = cls.daily_data.districts.get(house.city, dict())
+        tmp_dis_city['total'] = BasicStatistic()
         tmp_dis = tmp_dis_city.get(house.district, BasicStatistic())
 
         if "下架" in house.status or "成交" in house.status:
@@ -264,7 +265,7 @@ class ReportService:
         else:
             tmp_dis.total += 1
 
-            if cls.new_seeds.exist(house.hash_code):
+            if house.hash_code in cls.new_seeds:
                 house.status = "新上架"
                 tmp_dis.up += 1
 
@@ -289,7 +290,7 @@ class ReportService:
     def _send_notification(cls):
         cls.logger.info(f"Send notification.")
         daily_total_house_file = cls.file_time + "_house_status.csv"
-        FileService.save_file(cls.base_dir, daily_total_house_file, cls.daily_data.daily_house_status, 'utf_8_sig')
+        FileService.save_file(cls.tmp_dir, daily_total_house_file, cls.daily_data.daily_house_status, 'utf_8_sig')
 
         chart_address = "\n" + "曲线图：http://hkdev.yifei.me:8080/basic_statistic/" + "\n"
         basic_report = cls.daily_data.generate_report()
@@ -309,28 +310,39 @@ class ReportService:
         time.sleep(3)
 
     @classmethod
+    def _dict_append_data(cls, base, name, input_data, date):
+        base[name]['x_data'].append(date)
+        base[name]['on'].append(input_data.total)
+        base[name]['up'].append(input_data.up)
+        base[name]['down'].append(input_data.down)
+        base[name]['inc'].append(input_data.inc)
+        base[name]['dec'].append(input_data.dec)
+
+    @classmethod
     def _gen_char_data(cls):
-        wanted_order = ['total', '海淀', '西城', '东城', '房山',
+        wanted_order = ['total', '海淀', '西城', '东城', '房山', '昌平',
                         '高新西', '天府新区', '武侯', '成华', '金牛', '青羊', '锦江', '']
 
         template = {'x_data': [], 'on': [], 'up': [], 'down': [], 'inc': [], 'dec': []}
         result_districts = dict()
+        city_total = BasicStatistic()
         for file_date, data in CacheService.daily_cache_data.items():
             for city, districts in data.items():
+                city_total.reset()
                 if city not in result_districts:
                     result_districts[city] = dict()
                 city_districts = result_districts[city]
+
                 for dis_name, dis_value in districts.items():
                     if dis_name not in city_districts:
                         city_districts[dis_name] = copy.deepcopy(template)
                         continue  # ignore the data of first day, because all the data is marked as up.
-                    city_districts[dis_name]['x_data'].append(file_date)
-                    city_districts[dis_name]['on'].append(dis_value.total)
-                    city_districts[dis_name]['up'].append(dis_value.up)
-                    city_districts[dis_name]['down'].append(dis_value.down)
-                    city_districts[dis_name]['inc'].append(dis_value.inc)
-                    city_districts[dis_name]['dec'].append(dis_value.dec)
-
+                    cls._dict_append_data(city_districts, dis_name, dis_value, file_date)
+                    city_total += dis_value
+                cls._dict_append_data(city_districts, 'total', city_total, file_date)
+                # put the total data to daily_data.districts for report generation
+                if city in cls.daily_data.districts:
+                    cls.daily_data.districts[city]['total'] = city_total
         # Reorder
         for city, data in result_districts.items():
             ordered_data = []
@@ -443,20 +455,23 @@ class ReportService:
         for file in data_files:
             cls._process_file(file)
 
+        CacheService.update_daily_cache(cls.file_time, cls.daily_data.districts)
+
+        # generate char data
+        cls._gen_char_data()
+
         # send email
         cls._send_notification()
 
         # upload today's data
         # cls.oss_client.upload_file(file)
 
-        CacheService.update_daily_cache(cls.file_time, cls.daily_data.districts)
-
-        # generate char data
-        cls._gen_char_data()
-
     @classmethod
     def work(cls):
         cls.logger.info(f"Start generating report.")
+        if os.path.exists(cls.tmp_dir):
+            shutil.rmtree(cls.tmp_dir)
+        os.mkdir(cls.tmp_dir)
         CacheService.start()
         pack_list = cls.get_pack_list()
         cls.logger.info(f"Pack list: {pack_list}")
@@ -467,12 +482,14 @@ class ReportService:
             for file in process_files:
                 cls.logger.info(f"Begin to process file {file}")
                 cls.gen_report(file)
-            CacheService.stop(process_files[len(process_files) - 1])
+            # now the cls.file_time saved the latest date of data
+            CacheService.stop(cls.file_time)
         else:
             cls.logger.warning(f"No need to generate report, because of the data is not newer than cache.")
 
 
 if __name__ == '__main__':
     ReportService.work()
+
 
 

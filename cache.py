@@ -6,7 +6,7 @@ import pickle
 import logging
 import shutil
 import util
-from sync_set import SyncSet
+from config import ConfigService
 
 
 class MarkDict:
@@ -47,16 +47,14 @@ class CacheService:
     house_cache_data = dict()
     daily_cache_data = dict()
     down_cache_data = MarkDict()
-    current_seeds = SyncSet()
-    new_seeds = SyncSet()
-    to_delete_seeds = SyncSet()
+    current_seeds = set()
+    to_delete_seeds = set()
 
     seed_file_list = []
 
     @classmethod
     def reset(cls):
-        cls.new_seeds = SyncSet()
-        cls.to_delete_seeds = SyncSet()
+        cls.to_delete_seeds = set()
 
     @classmethod
     def _load_cache(cls, file_name):
@@ -95,7 +93,7 @@ class CacheService:
             cls.house_cache_data = dict()
             cls.daily_cache_data = dict()
             cls.down_cache_data = MarkDict()
-            cls.seed_cache_data = SyncSet()
+            cls.seed_cache_data = set()
 
     @classmethod
     def _save_cache(cls, file, data, latest_folder_time):
@@ -113,8 +111,9 @@ class CacheService:
         cls._save_cache(cls.house_cache_file, cls.house_cache_data, latest_folder_time)
         cls._save_cache(cls.down_cache_file, cls.down_cache_data, latest_folder_time)
         cls._save_cache(cls.daily_cache_file, cls.daily_cache_data, latest_folder_time)
-        cls._save_cache(cls.seed_cache_file, cls.seed_cache_data, latest_folder_time)
-        cls.generate_seed_file(cls.base_dir + '/seeds_file_auto_save' + '_' + latest_folder_time)
+        cls._save_cache(cls.seed_cache_file, cls.current_seeds, latest_folder_time)
+
+        cls.generate_seed_file(latest_folder_time)
 
     @classmethod
     def generate_new_seed_cache(cls, new_seed_file):
@@ -124,7 +123,7 @@ class CacheService:
         :return: new seeds hash list
         """
         cls.seed_file_list.append(new_seed_file)
-        res = SyncSet()
+        res = set()
         with open(new_seed_file) as f:
             for line in f:
                 hash_code = util.get_line_hash(line)
@@ -154,27 +153,27 @@ class CacheService:
         :return:
         """
         cls.logger.info(f"Fresh cache based on the to_delete data")
-        while True:
-            delete_hash = cls.to_delete_seeds.get()
-            if delete_hash:
-                del cls.current_seeds[delete_hash]
-                if delete_hash in cls.house_cache_data:
-                    del cls.house_cache_data[delete_hash]
-            else:
-                break
+        for delete_hash in cls.to_delete_seeds:
+            cls.current_seeds.remove(delete_hash)
+            if delete_hash in cls.house_cache_data:
+                del cls.house_cache_data[delete_hash]
 
     @classmethod
-    def generate_seed_file(cls, result_seed_file):
+    def generate_seed_file(cls, latest_folder_time):
+        target_seed_file = ConfigService.get_seeds_file()
+        if os.path.exists(target_seed_file):
+            shutil.copy(target_seed_file, target_seed_file + '_' + latest_folder_time)
         output_count = 0
-        with open(result_seed_file, 'w') as output:
+        with open(target_seed_file, 'w') as output:
             for file in cls.seed_file_list:
                 with open(file) as f:
                     for line in f:
                         hash_code = util.get_line_hash(line)
-                        if hash_code:
+                        if hash_code and hash_code in cls.current_seeds:
                             output.write(line)
+                            cls.current_seeds.remove(hash_code)
                             output_count += 1
-        cls.logger.info(f"Finish generate seed file {result_seed_file} with {output_count} lines.")
+        cls.logger.info(f"Finish generate seed file {target_seed_file} with {output_count} lines.")
 
     @classmethod
     def get_house(cls, hash_code):
@@ -197,3 +196,4 @@ class CacheService:
     @classmethod
     def update_daily_cache(cls, date, data):
         cls.daily_cache_data[date] = data
+
