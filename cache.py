@@ -213,7 +213,7 @@ class CacheService:
                 if dis_name not in city_cache:
                     city_cache[dis_name] = copy.deepcopy(template)
                     continue
-                cls._dict_append_data(city_cache, dis_name, dis_data)
+                cls._dict_append_data(city_cache, dis_name, dis_data, date)
             cls.daily_cache_data[city] = city_cache
 
 

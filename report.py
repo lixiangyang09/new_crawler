@@ -119,13 +119,13 @@ class Daily:
             else:
                 basic_report += f"{city} \n"
             for dis_name, dis_statis in dis.items():
-                basic_report += "\n    "
-                basic_report += f"{dis_name}, {dis_statis}"
+                basic_report += f"\n    {dis_name}, {dis_statis}"
                 total_statis += dis_statis
             self.districts[city]['total'] = total_statis
+            basic_report += f"\n    total, {total_statis}"
         return basic_report
 
- 
+
 class ReportService:
     logger = logging.getLogger(__name__)
     data_file_suffix = "_report_data.tar.gz"
