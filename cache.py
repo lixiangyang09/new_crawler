@@ -6,6 +6,7 @@ import pickle
 import logging
 import shutil
 import util
+import copy
 from config import ConfigService
 
 
@@ -194,6 +195,26 @@ class CacheService:
         return res
 
     @classmethod
+    def _dict_append_data(cls, base, name, input_data, date):
+        base[name]['x_data'].append(date)
+        base[name]['on'].append(input_data.total)
+        base[name]['up'].append(input_data.up)
+        base[name]['down'].append(input_data.down)
+        base[name]['inc'].append(input_data.inc)
+        base[name]['dec'].append(input_data.dec)
+
+    @classmethod
     def update_daily_cache(cls, date, data):
+        template = {'x_data': [], 'on': [], 'up': [], 'down': [], 'inc': [], 'dec': []}
         cls.daily_cache_data[date] = data
+        for city, city_dis in data.items():
+            city_cache = cls.daily_cache_data.get(city, dict())
+            for dis_name, dis_data in city_dis.items():
+                if dis_name not in city_cache:
+                    city_cache[dis_name] = copy.deepcopy(template)
+                    continue
+                cls._dict_append_data(city_cache, dis_name, dis_data)
+            cls.daily_cache_data[city] = city_cache
+
+
 

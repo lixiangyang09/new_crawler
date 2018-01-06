@@ -191,7 +191,7 @@ class ProxyService:
                 proxy_db_count += 1
         cls.logger.info(f"Write back {str(proxy_db_count)} proxies.")
 
-        email_subject = f"{cls.file_time} proxy report"
+        email_subject = f"{datetime.now()} proxy report"
         util.send_mail("562315079@qq.com", "qlwhrvzayytcbche",
                        ["562315079@qq.com"],
                        email_subject, cls.generate_report())

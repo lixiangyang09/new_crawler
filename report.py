@@ -110,32 +110,22 @@ class Daily:
 
         self.daily_house_status = House.get_header() + "\n"
 
-    def to_dict(self):
-        res = dict()
-        origin = self.__dict__
-        for key, value in origin.items():
-            if key == "districts":
-                dis_res = dict()
-                for dis_name, dis_inst in value.items():
-                    dis_res[dis_name] = dis_inst.__dict__
-                value = dis_res
-            res[key] = value
-        return res
-
     def generate_report(self):
         basic_report = ""
         for city, dis in self.districts.items():
-            total_statis = self.districts[city]['total']
+            total_statis = BasicStatistic()
             if city == 'bj':
                 basic_report += f"{city},价格区间,200-1600 \n"
             else:
-                basic_report += f"{city},{total_statis}"
+                basic_report += f"{city} \n"
             for dis_name, dis_statis in dis.items():
                 basic_report += "\n    "
                 basic_report += f"{dis_name}, {dis_statis}"
+                total_statis += dis_statis
+            self.districts[city]['total'] = total_statis
         return basic_report
 
-
+ 
 class ReportService:
     logger = logging.getLogger(__name__)
     data_file_suffix = "_report_data.tar.gz"
@@ -248,7 +238,6 @@ class ReportService:
         cls.logger.info(f"Processing {file} with data hash {house.hash_code}")
         cls.daily_data.file_count += 1
         tmp_dis_city = cls.daily_data.districts.get(house.city, dict())
-        tmp_dis_city['total'] = BasicStatistic()
         tmp_dis = tmp_dis_city.get(house.district, BasicStatistic())
 
         if "下架" in house.status or "成交" in house.status:
@@ -322,29 +311,8 @@ class ReportService:
     def _gen_char_data(cls):
         wanted_order = ['total', '海淀', '西城', '东城', '房山', '昌平',
                         '高新西', '天府新区', '武侯', '成华', '金牛', '青羊', '锦江', '']
-
-        template = {'x_data': [], 'on': [], 'up': [], 'down': [], 'inc': [], 'dec': []}
-        result_districts = dict()
-        city_total = BasicStatistic()
-        for file_date, data in CacheService.daily_cache_data.items():
-            for city, districts in data.items():
-                city_total.reset()
-                if city not in result_districts:
-                    result_districts[city] = dict()
-                city_districts = result_districts[city]
-
-                for dis_name, dis_value in districts.items():
-                    if dis_name not in city_districts:
-                        city_districts[dis_name] = copy.deepcopy(template)
-                        continue  # ignore the data of first day, because all the data is marked as up.
-                    cls._dict_append_data(city_districts, dis_name, dis_value, file_date)
-                    city_total += dis_value
-                cls._dict_append_data(city_districts, 'total', city_total, file_date)
-                # put the total data to daily_data.districts for report generation
-                if city in cls.daily_data.districts:
-                    cls.daily_data.districts[city]['total'] = city_total
         # Reorder
-        for city, data in result_districts.items():
+        for city, data in CacheService.daily_cache_data.items():
             ordered_data = []
             for dis_name in wanted_order:
                 if dis_name in data:
@@ -455,13 +423,13 @@ class ReportService:
         for file in data_files:
             cls._process_file(file)
 
+        # send email
+        cls._send_notification()
+
         CacheService.update_daily_cache(cls.file_time, cls.daily_data.districts)
 
         # generate char data
         cls._gen_char_data()
-
-        # send email
-        cls._send_notification()
 
         # upload today's data
         # cls.oss_client.upload_file(file)
