@@ -94,15 +94,15 @@ class ProcessService:
 
     @classmethod
     def process(cls, seed, data):
-        if seed.seed_type == 'proxy':
-            if seed.seed_target == 'index':
+        if seed.type == 'proxy':
+            if seed.target == 'index':
                 cls.proxy_processor.process_index_data(data)
-            elif seed.seed_target == 'page':
+            elif seed.target == 'page':
                 cls.proxy_processor.process_page_data(data)
-        elif seed.seed_type == 'content':
-            if seed.seed_target == 'index':
+        elif seed.type == 'content':
+            if seed.target == 'index':
                 cls.content_processor.process_index_data(data)
-            elif seed.seed_target == 'page':
+            elif seed.target == 'page':
                 data['hash_code'] = seed.hash_code
                 cls.content_processor.process_page_data(data)
 
