@@ -207,6 +207,7 @@ class SeedsService:
         with cls._save_lock:
             if not cls.current_seeds.exist(seed.hash_code) and \
              seed.type == 'content' and seed.target == 'page':
+                # only save the content seeds of page target.
                 with open(cls.seeds_file, 'a') as f:
                     f.write(str(seed) + "\n")
 
@@ -241,6 +242,8 @@ class SeedsService:
     @classmethod
     def _get_remaining_seed(cls):
         res_seed = None
+        if not cls.seeds_file_handle:
+            return res_seed
         for line in cls.seeds_file_handle:
             tokens = line.split(',')
             hash_code = tokens[0]

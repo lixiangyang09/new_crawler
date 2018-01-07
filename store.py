@@ -24,7 +24,8 @@ class RedisService:
 
     @classmethod
     def send_msg(cls, data):
-        cls.producer.send_events(cls.topic, [data])
+        # cls.producer.send_events(cls.topic, [data])
+        pass
 
     @classmethod
     def receive_msg(cls):
@@ -75,7 +76,6 @@ class FileService:
     @classmethod
     def save_data(cls, data):
         cls.save_file(util.get_output_data_dir(), str(util.get_uuid()), data)
-        RedisService.send_msg(data)
 
 
 class OSSClient:

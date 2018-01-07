@@ -38,9 +38,10 @@ class RequestService:
         cls.session.headers.update({'User-Agent': ua})
         request_timeout = 5
         data = ""
+        status_code = 404
         while True:
+            proxy_instance = ProxyService.get()
             try:
-                proxy_instance = ProxyService.get()
                 cls.logger.info(f"In processing seed url {str(url)} with proxy: {str(proxy_instance)}")
                 if proxy_instance:
                     proxy_data = proxy_instance.ip + ":" + proxy_instance.port
@@ -60,12 +61,18 @@ class RequestService:
                     url = response.url
                     data = content
 
-                # put the good proxy back into queue for next time use
-                ProxyService.put(proxy_instance)
-                break
+                if 399 < status_code < 500 or status_code == 200:
+                    # put the good proxy back into queue for next time use
+                    ProxyService.put(proxy_instance)
+                    break
+                else:
+                    continue
             # current proxy doesn't work, we need to change another proxy instance to crawl the same seed
             except requests.exceptions.RequestException:
-                pass
+                if proxy_instance:  # if this happens when using proxy, the proxy does't work
+                    pass
+                else:  # if there is no proxy, just drop the seed
+                    break
                 # ProxyService.update_proxy(proxy_instance)
                 # logger.warning(traceback.format_exc())
                 # logger.warning(f"the seeds {seed.url} with the RequestException exception.")
@@ -78,7 +85,6 @@ class RequestService:
                 # traceback.print_exc()
                 cls.logger.warning(traceback.format_exc())
                 break
-
         return status_code, url, data
 
     @classmethod

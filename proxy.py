@@ -71,22 +71,24 @@ class StatusService:
             else:
                 work += 1
 
-            for ind in range(1, status.invoke_count):
+            for ind in range(0, status.invoke_count):
                 work_count_res = work_count.get(ind, {'count': 0, 'total': 0})
                 work_count_res['count'] += 1
-                work_count_res[total] += (status.invoke_history[ind] - status.invoke_history[ind-1]).seconds
+                if ind > 0:
+                    work_count_res['total'] += (status.invoke_history[ind] - status.invoke_history[ind-1]).seconds
+                work_count[ind] = work_count_res
 
         report_str = f'proxy使用情况:\n ' \
                      f'   总量:{str(total)}\n' \
-                     f'   可用:{str(work_count)}\n' \
-                     f' 曾经可用： {str(worked_count)}\n'
+                     f'   可用:{str(work)}\n' \
+                     f' 曾经可用： {str(worked)}\n'
         for count, statistic in worked_count.items():
-            report_str += f'   调用{str(count)}次后, {str(statistic)} 不可再使用\n'
+            report_str += f'   调用{str(count + 1)}次后, {str(statistic)} 不可再使用\n'
 
         for count, statistic in work_count.items():
             local_count = statistic['count']
             local_avg = statistic['total'] / local_count
-            report_str += f'调用{str(count)}次, 数量: {str(local_count)}, 平均间隔(s): {str(local_avg)}\n'
+            report_str += f'调用{str(count + 1)}次, 数量: {str(local_count)}, 平均间隔(s): {str(local_avg)}\n'
         return report_str
 
 

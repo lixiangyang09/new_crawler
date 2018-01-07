@@ -10,6 +10,8 @@ import shutil
 
 dir_input = 'report_data'
 
+dir_convert = 'report_data_convert'
+
 dir_tmp = '/tmp/report_tmp'
 
 dir_database = '/tmp/database'
@@ -20,6 +22,10 @@ if os.path.exists(dir_tmp):
     shutil.rmtree(dir_tmp)
 os.makedirs(dir_tmp)
 
+if os.path.exists(dir_convert):
+    shutil.rmtree(dir_convert)
+os.makedirs(dir_convert)
+
 if os.path.exists(dir_database):
     shutil.rmtree(dir_database)
 os.makedirs(dir_database)
@@ -27,6 +33,8 @@ os.makedirs(dir_database)
 if os.path.exists(dir_output):
     shutil.rmtree(dir_output)
 os.makedirs(dir_output)
+
+data_file_suffix = "_report_data.tar.gz"
 
 # get packed files
 files = os.listdir(dir_input)
@@ -36,7 +44,7 @@ for file in packed_files:
     print(f"Processing file {file}")
     # get date
     filename = os.path.basename(file)
-    end_index = filename.rindex("_report_data.tar.gz")
+    end_index = filename.rindex(data_file_suffix)
     date = filename[:end_index]
 
     # unpack file
@@ -81,3 +89,25 @@ for file in packed_files:
                     new_hash = util.get_hash(tokens[2])
                     output.write(f"{new_hash},content,page,lianjia,{tokens[2]}\n")
     shutil.rmtree(dir_tmp + '/' + date)
+
+    # pack data
+
+    tar_file = dir_convert + "/" + date + data_file_suffix
+    if os.path.exists(tar_file):
+        os.remove(tar_file)
+    dir_convert_tmp = dir_convert + '/' + date
+    if os.path.exists(dir_convert_tmp):
+        shutil.rmtree(dir_convert_tmp)
+    os.mkdir(dir_convert_tmp)
+
+    shutil.copyfile(target_seed_file, dir_convert_tmp + "/" + os.path.basename(target_seed_file))
+    shutil.copyfile(target_new_seed_file, dir_convert_tmp + "/" + os.path.basename(target_new_seed_file))
+
+    shutil.copytree(dir_output + '/' + date, dir_convert_tmp + "/" + date)
+    # pack
+    current_dir = os.getcwd()
+    os.chdir(dir_convert)
+    FileService.pack_folder(os.path.basename(tar_file), date, True)
+    os.chdir(current_dir)
+
+

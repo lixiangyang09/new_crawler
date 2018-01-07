@@ -1,52 +1,18 @@
 
 constants:
-    proxy_db_file: ./../crawler/database/proxy.db
-    proxy_db_raw_file: ./../crawler/database/proxy_raw.db
+    proxy_db_file: ./database/proxy.db
+    proxy_db_raw_file: ./database/proxy_raw.db
 
     seeds_file: ./database/seeds
     new_seeds_file: ./database/new_seeds
 
 seeds_instance:
-    proxy:
-        - free-proxy-list:
-            page:
-                url:
-                    - https://free-proxy-list.net/
-        - xicidaili:
-            index:
-                url:
-                    - http://www.xicidaili.com/nn
-        - ip181:
-            index:
-                url:
-                    - http://www.ip181.com/daili/1.html
 
     content:
         - lianjia:
-            index:
+            page:
                 url:
-                    - https://cd.lianjia.com/ershoufang/jinniu/bp251ep10000/
-                    - https://cd.lianjia.com/ershoufang/jinniu/bp0ep250/
-
-                    - https://cd.lianjia.com/ershoufang/qingyang/bp0ep200/
-                    - https://cd.lianjia.com/ershoufang/qingyang/bp201ep10000/
-
-                    - https://cd.lianjia.com/ershoufang/jinjiang/bp0ep200/
-                    - https://cd.lianjia.com/ershoufang/jinjiang/bp201ep10000/
-
-                    - https://cd.lianjia.com/ershoufang/chenghua/bp0ep200/
-                    - https://cd.lianjia.com/ershoufang/chenghua/bp201ep10000/
-
-                    - https://cd.lianjia.com/ershoufang/wuhou/bp0ep200/
-                    - https://cd.lianjia.com/ershoufang/wuhou/bp201ep10000/
-
-                    - https://cd.lianjia.com/ershoufang/tianfuxinqu/bp0ep200/
-                    - https://cd.lianjia.com/ershoufang/tianfuxinqu/bp201ep10000/
-
-                    - https://cd.lianjia.com/ershoufang/gaoxinxi1/bp0ep200/
-                    - https://cd.lianjia.com/ershoufang/gaoxinxi1/bp201ep10000/
-
-
+                    - https://bj.lianjia.com/ershoufang/101101966534.html
 seeds_template:
     content:
         - lianjia:

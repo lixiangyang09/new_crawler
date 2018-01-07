@@ -39,7 +39,7 @@ class ExtractService:
             tree = html.fromstring(web_content)
 
             # validate the content
-            if seed.validate is not None:
+            if seed.validate:
                 validate_res = False
                 for validate_xpath in seed.validate:
                     value = tree.xpath(validate_xpath)

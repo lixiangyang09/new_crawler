@@ -11,6 +11,8 @@ from request import RequestService
 from extract import ExtractService
 from process import ProcessService
 
+from store import FileService
+
 
 class RunContext:
 
@@ -33,7 +35,7 @@ class RunContext:
 
 class CrawlService:
     logger = logging.getLogger(__name__)
-    number_threads = 3
+    number_threads = 1
     semaphore = BoundedSemaphore(number_threads)
     run_context = RunContext()
 
@@ -70,7 +72,7 @@ class CrawlService:
                 res = RequestService.request(seed)
                 if res[0] == 200:
                     extract_status, data = ExtractService.extract(seed, res[2])
-                    cls.logger.info(f"extract_status: {str(extract_status)}")
+                    cls.logger.info(f"extract_status: {str(extract_status)} of {seed}")
                     if extract_status:  # thought return ok, but the content is not wanted
                         ProcessService.process(seed, data)
                         cls.logger.info(f"Successfully processing seed {str(seed)}")
