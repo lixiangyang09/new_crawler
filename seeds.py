@@ -59,8 +59,8 @@ class Seed:
                  validate=[],
                  fields={},
                  hash_code=""):
-        self.seed_type = seed_type_source
-        self.seed_target = seed_type_target
+        self.type = seed_type_source
+        self.target = seed_type_target
         self.url = url
         self.source = source
         self.loadJS = loadJS
@@ -72,7 +72,7 @@ class Seed:
         self.hash_code = util.get_hash(self.url)
 
     def __repr__(self):
-        return self.hash_code + ',' + self.seed_type + ',' + self.seed_target + ',' + self.source + ',' + self.url
+        return self.hash_code + ',' + self.type + ',' + self.target + ',' + self.source + ',' + self.url
 
 
 class SeedsService:
@@ -121,8 +121,8 @@ class SeedsService:
                             if attr_name == 'fields':
                                 attr_value = parse_fields(attr_value)
                             setattr(seed_template_tmp, attr_name, attr_value)
-                        seed_template_tmp.seed_type = seed_type
-                        seed_template_tmp.seed_target = seed_target
+                        seed_template_tmp.type = seed_type
+                        seed_template_tmp.target = seed_target
                         seed_template_tmp.source = source
                         cls.template[(seed_type, seed_target, source)] = seed_template_tmp
         # load the seeds defined in configuraion file
@@ -205,7 +205,8 @@ class SeedsService:
         :return:
         """
         with cls._save_lock:
-            if not cls.current_seeds.exist(seed.hash_code):
+            if not cls.current_seeds.exist(seed.hash_code) and \
+             seed.type == 'content' and seed.target == 'page':
                 with open(cls.seeds_file, 'a') as f:
                     f.write(str(seed) + "\n")
 

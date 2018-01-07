@@ -10,6 +10,40 @@ import copy
 from config import ConfigService
 
 
+class BasicStatistic:
+    def __init__(self):
+        self.total = 0
+        self.up = 0
+        self.down = 0
+        self.inc = 0
+        self.dec = 0
+
+    def reset(self):
+        self.total = 0
+        self.up = 0
+        self.down = 0
+        self.inc = 0
+        self.dec = 0
+
+    def __iadd__(self, ins):
+        if isinstance(ins, BasicStatistic):
+            self.total += ins.total
+            self.up += ins.up
+            self.down += ins.down
+            self.inc += ins.inc
+            self.dec += ins.dec
+        else:
+            print(f"+= . Not an instance of BasicStatistic.")
+        return self
+
+    def __repr__(self):
+        return f"在售, {self.total}, " \
+               f"涨价, {self.inc}, " \
+               f"降价, {self.dec}, " \
+               f"上架, {self.up}, " \
+               f"下架, {self.down}"
+
+
 class MarkDict:
     def __init__(self):
         self._data = dict()
@@ -209,11 +243,16 @@ class CacheService:
         cls.daily_cache_data[date] = data
         for city, city_dis in data.items():
             city_cache = cls.daily_cache_data.get(city, dict())
+            if 'total' not in city_cache:
+                city_cache['total'] = copy.deepcopy(template)
+            total_dis = BasicStatistic()
             for dis_name, dis_data in city_dis.items():
                 if dis_name not in city_cache:
                     city_cache[dis_name] = copy.deepcopy(template)
                     continue
                 cls._dict_append_data(city_cache, dis_name, dis_data, date)
+                total_dis += dis_data
+            cls._dict_append_data(city_cache, 'total', total_dis, date)
             cls.daily_cache_data[city] = city_cache
 
 

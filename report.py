@@ -8,7 +8,7 @@ import ast
 from datetime import datetime, timedelta
 from store import FileService, OSSClient
 from config import ConfigService
-from cache import CacheService
+from cache import CacheService, BasicStatistic
 import logging
 import os
 import pickle
@@ -67,40 +67,6 @@ class House:
                f"{self.view_count},{self.status},{self.deal_period},{self.vary}"
 
 
-class BasicStatistic:
-    def __init__(self):
-        self.total = 0
-        self.up = 0
-        self.down = 0
-        self.inc = 0
-        self.dec = 0
-
-    def reset(self):
-        self.total = 0
-        self.up = 0
-        self.down = 0
-        self.inc = 0
-        self.dec = 0
-
-    def __iadd__(self, ins):
-        if isinstance(ins, BasicStatistic):
-            self.total += ins.total
-            self.up += ins.up
-            self.down += ins.down
-            self.inc += ins.inc
-            self.dec += ins.dec
-        else:
-            print(f"+= . Not an instance of BasicStatistic.")
-        return self
-
-    def __repr__(self):
-        return f"在售, {self.total}, " \
-               f"涨价, {self.inc}, " \
-               f"降价, {self.dec}, " \
-               f"上架, {self.up}, " \
-               f"下架, {self.down}"
-
-
 class Daily:
     def __init__(self):
         #  districts[city] = dict()
@@ -121,7 +87,6 @@ class Daily:
             for dis_name, dis_statis in dis.items():
                 basic_report += f"\n    {dis_name}, {dis_statis}"
                 total_statis += dis_statis
-            self.districts[city]['total'] = total_statis
             basic_report += f"\n    total, {total_statis}"
         return basic_report
 
@@ -296,7 +261,7 @@ class ReportService:
 
         print(email_subject + '\n')
         print(developer_msg)
-        time.sleep(3)
+        # time.sleep(3)
 
     @classmethod
     def _dict_append_data(cls, base, name, input_data, date):
