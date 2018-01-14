@@ -32,6 +32,19 @@ seeds_instance:
 
                     - https://cd.lianjia.com/ershoufang/gaoxinxi1/bp0ep200/
                     - https://cd.lianjia.com/ershoufang/gaoxinxi1/bp201ep10000/
+
+                    - https://bj.lianjia.com/ershoufang/haidian/pg1bp200ep600/
+                    - https://bj.lianjia.com/ershoufang/haidian/pg1bp601ep1600/
+
+                    - https://bj.lianjia.com/ershoufang/xicheng/pg1bp200ep1600/
+
+                    - https://bj.lianjia.com/ershoufang/dongcheng/pg1bp200ep1600/
+
+                    - https://bj.lianjia.com/ershoufang/fangshan/pg1bp200ep1600/
+
+                    - https://bj.lianjia.com/ershoufang/changping/pg1bp200ep450/
+                    - https://bj.lianjia.com/ershoufang/changping/pg1bp451ep1600/
+
     proxy:
         - free-proxy-list:
             page:

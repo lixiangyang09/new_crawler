@@ -78,7 +78,7 @@ class CrawlService:
                         cls.logger.info(f"Successfully processing seed {str(seed)}")
                 else:
                     cls.logger.warning(f"Return code {str(res[0])} of seed {str(seed)}")
-                time.sleep(4)
+                time.sleep(2)
         except:
             cls.logger.error(traceback.format_exc())
         finally:
