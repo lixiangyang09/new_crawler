@@ -35,7 +35,7 @@ class RunContext:
 
 class CrawlService:
     logger = logging.getLogger(__name__)
-    number_threads = 1
+    number_threads = 4
     semaphore = BoundedSemaphore(number_threads)
     run_context = RunContext()
 
@@ -78,7 +78,7 @@ class CrawlService:
                         cls.logger.info(f"Successfully processing seed {str(seed)}")
                 else:
                     cls.logger.warning(f"Return code {str(res[0])} of seed {str(seed)}")
-                time.sleep(3)
+                time.sleep(4)
         except:
             cls.logger.error(traceback.format_exc())
         finally:

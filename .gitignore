@@ -12,3 +12,4 @@ report_data_backup/
 shell.log
 cache_data/
 report_data_convert/
+.DS_Store
