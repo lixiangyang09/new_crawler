@@ -24,12 +24,24 @@ import os
 import ast
 from store import FileService
 
-path = 'output/2018-01-01'
-files = os.listdir(path)
-for file in files:
-    data_str = FileService.load_file(path + '/' + file)
-    data = ast.literal_eval(data_str)
-    data['hash_code'] = util.get_hash('https://cd.lianjia.com/ershoufang/' + data['id'] + '.html')
-    FileService.save_file(path, file, data)
+# path = 'output/2018-01-01'
+# files = os.listdir(path)
+# for file in files:
+#     data_str = FileService.load_file(path + '/' + file)
+#     data = ast.literal_eval(data_str)
+#     data['hash_code'] = util.get_hash('https://cd.lianjia.com/ershoufang/' + data['id'] + '.html')
+#     FileService.save_file(path, file, data)
+
+input_file = input("input file full path")
+output_file = input("output file full path")
+
+with open(output_file) as output_handle:
+    with open(input_file) as input_handle:
+        for line in input_handle:
+            hash_code = util.get_line_hash(line)
+            tokens = line.strip().split(',')
+            if hash_code:
+                output_line = util.get_hash(tokens[2]) + ',content,page,lianjia,' + tokens[2] + '\n'
+                output_handle.write(output_line)
 
 
