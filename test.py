@@ -31,11 +31,12 @@ from store import FileService
 #     data = ast.literal_eval(data_str)
 #     data['hash_code'] = util.get_hash('https://cd.lianjia.com/ershoufang/' + data['id'] + '.html')
 #     FileService.save_file(path, file, data)
-
+a = (util.get_hash('https://bj.lianjia.com/ershoufang/101102422688.html'))
+print(a)
 input_file = input("input file full path")
 output_file = input("output file full path")
 
-with open(output_file) as output_handle:
+with open(output_file, 'w') as output_handle:
     with open(input_file) as input_handle:
         for line in input_handle:
             hash_code = util.get_line_hash(line)
