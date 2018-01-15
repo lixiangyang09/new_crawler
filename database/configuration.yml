@@ -70,9 +70,9 @@ seeds_template:
                     - //div[@class="content "]/div[@class="leftContent"]/div[@class="resultDes clear"]
                 fields:
                     index:
-                        xpath : //div[@class="content "]/div[@class="leftContent"]/div[@class="contentBottom clear"]/div[@class="page-box fr"]/div
+                        xpath : //div[@class="page-box house-lst-page-box"]
                         udf : lianjiaIndexUDF
-                    page: //div[@class="content "]/div[@class="leftContent"]/ul/li/a/@href
+                    page: //li[@class="clear"]/a/@href
             page:
                 # normally, we should not define url here, all should from index crawl result
                 url:

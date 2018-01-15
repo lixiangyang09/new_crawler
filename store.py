@@ -36,11 +36,20 @@ class RedisService:
 class FileService:
 
     @classmethod
-    def pack_folder(cls, tar_file_name_with_path, target_folder, delete_folder=False):
-        with tarfile.open(tar_file_name_with_path, 'w:gz') as tar:
-            tar.add(target_folder)
-        if delete_folder:
-            shutil.rmtree(target_folder)  # delete the folder
+    def pack_folders(cls, tar_file_name_with_path, target_folders, delete_folder=False):
+        with tarfile.open(tar_file_name_with_path, 'a:gz') as tar:
+            for folder in target_folders:
+                tar.add(folder)
+                if delete_folder:
+                    shutil.rmtree(folder)  # delete the folder
+
+    @classmethod
+    def pack_files(cls, tar_file_name_with_path, target_files, delete_file=False):
+        with tarfile.open(tar_file_name_with_path, 'a:gz') as tar:
+            for file in target_files:
+                tar.addfile(file)
+                if delete_file:
+                    os.remove(file)
 
     @classmethod
     def unpack_file(cls, tar_file_path, target_path, delete_file=False):

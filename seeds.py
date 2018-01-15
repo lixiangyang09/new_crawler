@@ -89,10 +89,10 @@ class SeedsService:
     # remaining seeds hash key
     remaining_seeds = SyncSet()
     # seeds file
-    seeds_file = ConfigService.get_seeds_file() + "_" + util.start_date
+    seeds_file = constants.seeds_file + "_" + util.start_date
     seeds_file_handle = None
     # new_seeds_file
-    new_seeds_file = ConfigService.get_new_seeds_file() + "_" + util.start_date
+    new_seeds_file = constants.new_seeds_file + "_" + util.start_date
 
     logger = logging.getLogger('SeedsService')
 
@@ -152,9 +152,9 @@ class SeedsService:
         cls.logger.info(f"Total load {str(configuration_seeds_count)} seeds from configuration file")
         # load the seeds of last crawl
         cls.logger.info("Load seeds hash of last time crawled to remaining_seeds")
-        if os.path.exists(ConfigService.get_seeds_file()):
+        if os.path.exists(constants.seeds_file):
             last_seeds_count = 0
-            with open(ConfigService.get_seeds_file()) as f:
+            with open(constants.seeds_file) as f:
                 for line in f:
                     line_tmp = line.strip()
                     if line_tmp:
@@ -163,26 +163,26 @@ class SeedsService:
                         cls.remaining_seeds.add(hash_code)
                         cls.last_seeds.add(hash_code)
                         last_seeds_count += 1
-            cls.seeds_file_handle = open(ConfigService.get_seeds_file())
-            cls.logger.info(f"Total load {str(last_seeds_count)} seeds from {ConfigService.get_seeds_file()}")
+            cls.seeds_file_handle = open(constants.seeds_file)
+            cls.logger.info(f"Total load {str(last_seeds_count)} seeds from {constants.seeds_file}")
         else:
-            cls.logger.warning(f"{ConfigService.get_seeds_file()} not exists.")
+            cls.logger.warning(f"{constants.seeds_file} not exists.")
 
     @classmethod
     def stop(cls):
         if os.path.exists(cls.seeds_file):
-            if os.path.exists(ConfigService.get_seeds_file()):
-                os.remove(ConfigService.get_seeds_file())
-            # os.rename(cls.seeds_file, ConfigService.get_seeds_file())
-            shutil.copy(cls.seeds_file, ConfigService.get_seeds_file())
+            if os.path.exists(constants.seeds_file):
+                os.remove(constants.seeds_file)
+            # os.rename(cls.seeds_file, constants.seeds_file)
+            shutil.copy(cls.seeds_file, constants.seeds_file)
         else:
             cls.logger.warning(f"{cls.seeds_file} not exists.")
 
         if os.path.exists(cls.new_seeds_file):
-            if os.path.exists(ConfigService.get_new_seeds_file()):
-                os.remove(ConfigService.get_new_seeds_file())
-            # os.rename(cls.new_seeds_file, ConfigService.get_new_seeds_file())
-            shutil.copy(cls.new_seeds_file, ConfigService.get_new_seeds_file())
+            if os.path.exists(constants.new_seeds_file):
+                os.remove(constants.new_seeds_file)
+            # os.rename(cls.new_seeds_file, constants.new_seeds_file)
+            shutil.copy(cls.new_seeds_file, constants.new_seeds_file)
         else:
             cls.logger.warning(f"{cls.new_seeds_file} not exists.")
 

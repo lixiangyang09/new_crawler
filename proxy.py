@@ -150,8 +150,8 @@ class ProxyService:
     @classmethod
     def start(cls):
         proxy_raw_count = 0
-        if os.path.exists(ConfigService.get_proxy_db_raw()):
-            with open(ConfigService.get_proxy_db_raw()) as f:  # hash, process, date
+        if os.path.exists(constants.raw_proxy_file):
+            with open(constants.raw_proxy_file) as f:  # hash, process, date
                 for line in f:
                     cleaned_line = line.rstrip('\n')
                     if cleaned_line:
@@ -161,14 +161,14 @@ class ProxyService:
                         cls.put(proxy_instance)
                         proxy_raw_count += 1
             if not cls.proxy_all:
-                cls.logger.warning(f"No proxy after {ConfigService.get_proxy_db_raw()} function")
+                cls.logger.warning(f"No proxy after {constants.raw_proxy_file} function")
             else:
                 cls.logger.info(f"Totally load {str(proxy_raw_count)} raw proxies")
         else:
-            cls.logger.warning(f"can't find {ConfigService.get_proxy_db_raw()} file")
+            cls.logger.warning(f"can't find {constants.raw_proxy_file} file")
         proxy_db_count = 0
-        if os.path.exists(ConfigService.get_proxy_db()):
-            with open(ConfigService.get_proxy_db()) as f:  # hash, process, date
+        if os.path.exists(constants.proxy_file):
+            with open(constants.proxy_file) as f:  # hash, process, date
                 for line in f:
                     cleaned_line = line.rstrip('\n')
                     if cleaned_line:
@@ -177,16 +177,16 @@ class ProxyService:
                         cls.put(proxy_instance)
                         proxy_db_count += 1
             if not cls.proxy_all:
-                cls.logger.warning(f"No proxy after {ConfigService.get_proxy_db()} function")
+                cls.logger.warning(f"No proxy after {constants.proxy_file} function")
             else:
-                cls.logger.info(f"Totally load {str(proxy_db_count)} proxies from {ConfigService.get_proxy_db()}")
+                cls.logger.info(f"Totally load {str(proxy_db_count)} proxies from {constants.proxy_file}")
         else:
-            cls.logger.warning(f"can't find {ConfigService.get_proxy_db()} file")
+            cls.logger.warning(f"can't find {constants.proxy_file} file")
 
     @classmethod
     def stop(cls):
         proxy_db_count = 0
-        with open(ConfigService.get_proxy_db(), 'w') as f:
+        with open(constants.proxy_file, 'w') as f:
             for proxy in cls.proxy_all.values():
                 output = str(proxy) + "\n"
                 f.write(output)
