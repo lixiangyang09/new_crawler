@@ -231,10 +231,24 @@ class ReportService:
 
     @classmethod
     def _gen_char_data(cls):
+        daily_data = CacheService.get_daily_data()
+        template = {'x_data': [], 'on': [], 'up': [], 'down': [], 'inc': [], 'dec': []}
+        result = dict()
+
+        for file_date, city_data in daily_data.items():
+            for city, dis_data in city_data.items():
+                if city not in result:
+                    result[city] = dict()
+                res_dis = result[city]
+                for dis_name, dis_value in dis_data.items():
+                    if dis_name not in res_dis:
+                        res_dis[dis_name] = copy.deepcopy(template)
+                    cls._dict_append_data(res_dis, dis_name, dis_value, file_date)
+
         wanted_order = ['total', '海淀', '西城', '东城', '房山', '昌平',
                         '高新西', '天府新区', '武侯', '成华', '金牛', '青羊', '锦江', '']
         # Reorder
-        for city, data in CacheService.daily_cache_data.items():
+        for city, data in result.items():
             ordered_data = []
             for dis_name in wanted_order:
                 if dis_name in data:
@@ -295,9 +309,6 @@ class ReportService:
 
         CacheService.fresh_seed_file(cls.seed_file)
 
-        # generate char data
-        cls._gen_char_data()
-
         # upload today's data
         # cls.oss_client.upload_file(file)
 
@@ -315,6 +326,8 @@ class ReportService:
                 cls.gen_report(file)
             # now the cls.file_time saved the latest date of data
             CacheService.stop(cls.file_time)
+            # generate char data
+            cls._gen_char_data()
         else:
             cls.logger.warning(f"No need to generate report, because of the data is not newer than cache.")
 

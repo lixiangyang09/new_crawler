@@ -10,6 +10,7 @@ import queue
 from threading import Lock
 import logging
 import shutil
+import constants
 
 
 class Field:

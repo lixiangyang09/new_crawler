@@ -61,7 +61,8 @@ class RequestService:
                     url = response.url
                     data = content
 
-                if 399 < status_code < 500 or status_code == 200:
+                # if 399 < status_code < 500 or status_code == 200:
+                if status_code == 404 or status_code == 200:
                     # put the good proxy back into queue for next time use
                     ProxyService.put(proxy_instance)
                     break

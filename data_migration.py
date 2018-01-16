@@ -7,7 +7,7 @@ import ast
 import util
 import shutil
 from datetime import datetime, date, timedelta
-
+import traceback
 
 
 
@@ -65,7 +65,8 @@ def fresh_hash():
             data_files_tmp = os.listdir(dir_tmp + '/' + date + '/' + date)
             data_files = [dir_tmp + '/' + date + '/' + date + '/' + file for file in data_files_tmp if '-' in file]
 
-            shutil.copy(dir_tmp + '/' + date + '/content_page_seed_list', dir_seed + '/seeds_' + date)
+            if os.path.exists(dir_tmp + '/' + date + '/content_page_seed_list'):
+                shutil.copy(dir_tmp + '/' + date + '/content_page_seed_list', dir_seed + '/seeds_' + date)
 
             file_count_source = len(data_files)
             print(f'file count: {file_count_source}')
@@ -96,11 +97,16 @@ def fresh_hash():
     except BaseException:
         print(data_file)
         print(data_str)
+        print(traceback.print_exc())
 
 
 def csv_to_data():
     csv_file = '/Users/dev/Downloads/2018-01-07.csv'
-    output_folder = '/Users/dev/lianjia/2018-01-07'
+    output_base = '/Users/dev/lianjia'
+    file_date = '2018-01-07'
+    output_folder = output_base + '/' + file_date
+    seed_file = open(output_base + '/seeds_' + file_date, 'w')
+
     if os.path.exists(output_folder):
         shutil.rmtree(output_folder)
     os.makedirs(output_folder)
@@ -141,26 +147,46 @@ def csv_to_data():
                         'deal_period': tokens[13],
                         'hash_code': util.get_hash('https://bj.lianjia.com/ershoufang/' + tokens[0] + '.html')}
                 FileService.save_file(output_folder, str(util.get_uuid()), data)
+                seed_file.write(f"{data['hash_code']},content,page,lianjia,"
+                                f"https://bj.lianjia.com/ershoufang/{tokens[0]}.html\n")
+    seed_file.close()
 
 
 def rename_folder():
     data_folder = '/Users/dev/lianjia/result'
     folders = sorted(os.listdir(data_folder), reverse=True)
     for folder in folders:
-        if folder < '2017-11-28':
+        if folder < '2017-11-27':
             folder_date = datetime.strptime(folder, '%Y-%m-%d')
             target_date = folder_date + timedelta(days=1)
             target_folder = target_date.strftime('%Y-%m-%d')
             os.rename(data_folder + '/' + folder,
                       data_folder + '/' + target_folder)
-            os.rename('/Users/dev/lianjia/seed/beijing/seeds_' + folder,
-                      '/Users/dev/lianjia/seed/beijing/seeds_' + target_folder)
+            os.rename('/Users/dev/lianjia/seeds/beijing/seeds_' + folder,
+                      '/Users/dev/lianjia/seeds/beijing/seeds_' + target_folder)
             print(f'Rename {folder} to {target_folder}')
 
 
+def merge_seeds():
+    seeds_base_dir = '/Users/dev/lianjia/seeds/'
+    result_dir = '/Users/dev/lianjia/result/'
+    bj_seeds = os.listdir(seeds_base_dir + 'beijing')
+    cd_seeds = os.listdir(seeds_base_dir + 'chengdu')
+    for bj_seed in bj_seeds:
+        with open(result_dir + bj_seed, 'w') as out_handle:
+            with open(seeds_base_dir + 'beijing/' + bj_seed) as in_handle:
+                for line in in_handle:
+                    out_handle.write(line)
+            if bj_seed in cd_seeds:
+                with open(seeds_base_dir+ 'chengdu/' + bj_seed) as in_handle:
+                    for line in in_handle:
+                        out_handle.write(line)
+
+
 if __name__ == '__main__':
+    # fresh_hash()
     # csv_to_data()
-    fresh_hash()
     # rename_folder()
+    merge_seeds()
 
 

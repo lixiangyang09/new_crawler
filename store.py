@@ -148,8 +148,9 @@ class OSSClient:
             files = file
 
         upload_success = False
+        retry_count = 30
         try:
-            for _ in range(3):
+            for _ in range(retry_count):
                 self._put_files(files)
                 upload_success = True
                 break
@@ -159,7 +160,7 @@ class OSSClient:
         if upload_success:
             logger.info("upload to oss successfully.")
         else:
-            logger.warning("failed to upload data to oss")
+            logger.warning(f"failed to upload data to oss after {retry_count}times")
 
 
 if __name__ == '__main__':

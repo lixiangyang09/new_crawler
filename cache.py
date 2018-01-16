@@ -129,8 +129,11 @@ class CacheService:
         return cls.house_cache_data.get(hash_code, None)
 
     @classmethod
-    def get_daily_data(cls, date):
-        return cls.daily_cache_data[date]
+    def get_daily_data(cls, date=''):
+        if date:
+            return cls.daily_cache_data[date]
+        else:
+            return cls.daily_cache_data
 
     @classmethod
     def update_house(cls, house):

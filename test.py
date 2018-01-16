@@ -2,30 +2,31 @@
 #!/usr/bin/env python
 # encoding=utf8
 
+import ast
 
 from request import RequestService
 from extract import ExtractService
 from seeds import SeedsService
 from store import FileService
 
-SeedsService.start()
-
-
-seed = SeedsService.get_template('content', 'index', 'lianjia')
-
-seed.url = 'https://bj.lianjia.com/ershoufang/haidian/pg1bp200ep600/'
-
-res = RequestService.request(seed)
-
-cont = ExtractService.extract(seed, res[2])
-print(cont)
-
-seed.url = 'https://cd.lianjia.com/ershoufang/jinniu/bp251ep10000/'
-
-res = RequestService.request(seed)
-
-cont = ExtractService.extract(seed, res[2])
-print(cont)
+# SeedsService.start()
+#
+#
+# seed = SeedsService.get_template('content', 'index', 'lianjia')
+#
+# seed.url = 'https://bj.lianjia.com/ershoufang/haidian/pg1bp200ep600/'
+#
+# res = RequestService.request(seed)
+#
+# cont = ExtractService.extract(seed, res[2])
+# print(cont)
+#
+# seed.url = 'https://cd.lianjia.com/ershoufang/jinniu/bp251ep10000/'
+#
+# res = RequestService.request(seed)
+#
+# cont = ExtractService.extract(seed, res[2])
+# print(cont)
 
 import util
 import os
@@ -54,3 +55,6 @@ from store import FileService
 #                 output_handle.write(output_line)
 #
 #
+input_data = "{'type': 'house', 'city': 'beijing', 'status': '', 'id': '101102363010', 'price': '335', 'area': '37.8平米', 'unit_price': '88625', 'structure_info': '1室1厅', 'community_name': '红联南村', 'community_link': '/xiaoqu/1111027375144/', 'district': '海淀', 'subdistrict': '新街口', 'ring_loc': '二至三环', 'fav_count': '22', 'view_count': '12', 'room_count': '1室1厅1厨1卫', 'listed_time': '2017-12-02', 'deal_period': '', 'source': 'lianjia', 'hash_code': '9dc21740'}"
+res = ast.literal_eval(input_data)
+print(res)
