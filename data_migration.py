@@ -104,8 +104,9 @@ def csv_to_data():
     csv_file = '/Users/dev/Downloads/2018-01-07.csv'
     output_base = '/Users/dev/lianjia'
     file_date = '2018-01-07'
-    output_folder = output_base + '/' + file_date
-    seed_file = open(output_base + '/seeds_' + file_date, 'w')
+
+    output_folder = output_base + '/result/' + file_date
+    seed_file = open(output_base + '/seeds/beijing/seeds_' + file_date, 'w')
 
     if os.path.exists(output_folder):
         shutil.rmtree(output_folder)
@@ -176,17 +177,19 @@ def merge_seeds():
         with open(result_dir + bj_seed, 'w') as out_handle:
             with open(seeds_base_dir + 'beijing/' + bj_seed) as in_handle:
                 for line in in_handle:
-                    out_handle.write(line)
-            if bj_seed in cd_seeds:
-                with open(seeds_base_dir+ 'chengdu/' + bj_seed) as in_handle:
-                    for line in in_handle:
+                    if util.get_hash(line):
                         out_handle.write(line)
+            if bj_seed in cd_seeds:
+                with open(seeds_base_dir + 'chengdu/' + bj_seed) as in_handle:
+                    for line in in_handle:
+                        if util.get_hash(line):
+                            out_handle.write(line)
 
 
 if __name__ == '__main__':
-    # fresh_hash()
-    # csv_to_data()
-    # rename_folder()
+    fresh_hash()
+    csv_to_data()
+    rename_folder()
     merge_seeds()
 
 
