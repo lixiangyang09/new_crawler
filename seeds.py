@@ -171,6 +171,9 @@ class SeedsService:
 
     @classmethod
     def stop(cls):
+        if cls.seeds_file_handle:
+            cls.seeds_file_handle.close()
+
         if os.path.exists(cls.seeds_file):
             if os.path.exists(constants.seeds_file):
                 os.remove(constants.seeds_file)
@@ -186,9 +189,6 @@ class SeedsService:
             shutil.copy(cls.new_seeds_file, constants.new_seeds_file)
         else:
             cls.logger.warning(f"{cls.new_seeds_file} not exists.")
-
-        if cls.seeds_file_handle:
-            cls.seeds_file_handle.close()
 
     @classmethod
     def put(cls, seed):

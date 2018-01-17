@@ -18,3 +18,4 @@ output_base_dir = 'output'
 
 database_dir = 'database'
 
+chart_data_dir = 'chart_data'

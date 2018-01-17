@@ -36,20 +36,24 @@ class RedisService:
 class FileService:
 
     @classmethod
-    def pack_folders(cls, tar_file_name_with_path, target_folders, delete_folder=False):
-        with tarfile.open(tar_file_name_with_path, 'a:gz') as tar:
-            for folder in target_folders:
-                tar.add(folder)
-                if delete_folder:
-                    shutil.rmtree(folder)  # delete the folder
+    def pack_files(cls, tar_file_name_with_path, target_files, delete_after_pack=False):
+        file_path = os.path.dirname(tar_file_name_with_path)
+        if not os.path.exists(file_path):
+            os.makedirs(file_path)
+        with tarfile.open(tar_file_name_with_path, 'w:gz') as tar:
+            current_dir = os.getcwd()
+            for file, path in target_files:
+                os.chdir(path)
+                tar.add(file)
+                os.chdir(current_dir)
 
-    @classmethod
-    def pack_files(cls, tar_file_name_with_path, target_files, delete_file=False):
-        with tarfile.open(tar_file_name_with_path, 'a:gz') as tar:
-            for file in target_files:
-                tar.addfile(file)
-                if delete_file:
-                    os.remove(file)
+                full_path = path + '/' + file
+                if delete_after_pack:
+                    if os.path.isdir(full_path):
+                        shutil.rmtree(full_path)  # delete the folder
+                    else:
+                        if os.path.isfile(full_path):
+                            os.remove(full_path)
 
     @classmethod
     def unpack_file(cls, tar_file_path, target_path, delete_file=False):
@@ -164,7 +168,8 @@ class OSSClient:
 
 
 if __name__ == '__main__':
-    test_data = {'a': 1, 'b': 2}
-    RedisService.send_msg(test_data)
-    msgs = RedisService.receive_msg()
-    print(msgs)
+    # test_data = {'a': 1, 'b': 2}
+    # RedisService.send_msg(test_data)
+    # msgs = RedisService.receive_msg()
+    # print(msgs)
+    pass

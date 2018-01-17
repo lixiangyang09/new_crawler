@@ -9,24 +9,38 @@ from extract import ExtractService
 from seeds import SeedsService
 from store import FileService
 
-# SeedsService.start()
+status = '2017.10.21 链家成交'
+
+down_time = status.strip().split(' ')[0].replace('.', '-')
+
+SeedsService.start()
+
+
+seed = SeedsService.get_template('content', 'page', 'lianjia')
+
+seed.url = 'https://bj.lianjia.com/chengjiao/101101904861.html'
+
+res = RequestService.request(seed)
+
+cont = ExtractService.extract(seed, res[2])
+print(cont)
+
+# seed2 = SeedsService.get_template('proxy', 'index', 'ip181')
 #
+# seed2.url = 'http://www.ip181.com/daili/1.html'
+# res = RequestService.request(seed2)
 #
-# seed = SeedsService.get_template('content', 'index', 'lianjia')
-#
-# seed.url = 'https://bj.lianjia.com/ershoufang/haidian/pg1bp200ep600/'
-#
-# res = RequestService.request(seed)
-#
-# cont = ExtractService.extract(seed, res[2])
+# cont = ExtractService.extract(seed2, res[2])
 # print(cont)
-#
-# seed.url = 'https://cd.lianjia.com/ershoufang/jinniu/bp251ep10000/'
-#
-# res = RequestService.request(seed)
-#
-# cont = ExtractService.extract(seed, res[2])
-# print(cont)
+
+seed3 = SeedsService.get_template('proxy', 'page', 'ip181')
+
+seed3.url = 'http://www.ip181.com/daili/1.html'
+res = RequestService.request(seed3)
+
+cont = ExtractService.extract(seed3, res[2])
+print(cont)
+
 
 import util
 import os

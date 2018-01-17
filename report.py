@@ -98,14 +98,14 @@ class ReportService:
         # load seed file and new seed file
         # Just in order to be compatible with the old crawler package
         seed_file_old_version = cls.tmp_dir + '/' + date + '/content_page_seed_list'
-        cls.seed_file = cls.tmp_dir + '/' + date + "/" + os.path.basename(constants.seeds_file) + '_' + date
+        cls.seed_file = cls.tmp_dir + "/" + os.path.basename(constants.seeds_file) + '_' + date
         if os.path.exists(seed_file_old_version):
             if os.path.exists(cls.seed_file):
                 os.remove(cls.seed_file)
             shutil.copy(seed_file_old_version, cls.seed_file)
 
-        files = os.listdir(cls.tmp_dir + '/' + date + '/' + date)
-        res = [cls.tmp_dir + '/' + date + '/' + date + '/' + file for file in files]
+        files = os.listdir(cls.tmp_dir + '/' + date)
+        res = [cls.tmp_dir + '/' + date + '/' + file for file in files]
         return res
 
     @classmethod
@@ -157,11 +157,11 @@ class ReportService:
                 return
             else:
                 if not house.deal_period:
-                    up_time = datetime.strptime(house.up_time, '%Y-%m-%d')
+                    up_time = datetime.strptime(house.listed_time, '%Y-%m-%d')
                     file_time = datetime.strptime(cls.file_time, '%Y-%m-%d')
                     house.deal_period = str((file_time - up_time).days)
                 if "成交" in house.status:
-                    target_date = house.listed_time
+                    target_date = house.status.strip().split(' ')[0].replace('.', '-')
                 else:
                     target_date = cls.file_time
 
@@ -171,6 +171,7 @@ class ReportService:
 
             if house_cache is None:
                 CacheService.update_daily_data('up', house.listed_time, house.__dict__)
+                CacheService.update_daily_data('total', house.listed_time, house.__dict__)
 
             price_now = house.total_price
             if house_cache:
@@ -189,11 +190,11 @@ class ReportService:
     @classmethod
     def _generate_daily_basic_report(cls):
         daily_data = CacheService.get_daily_data(cls.file_time)
-        res = ''
+        res = f'Total data file: {cls.total_data_files}\n'
         for city, dises in daily_data.items():
             res += f'{city}:\n'
             for dis_name, dis_data in dises.items():
-                res += f'{dis_name}: {dis_data} \n'
+                res += f'    {dis_name}: {dis_data} \n'
         return res
 
     @classmethod
@@ -218,7 +219,7 @@ class ReportService:
 
         print(email_subject + '\n')
         print(developer_msg)
-        time.sleep(10)
+        # time.sleep(10)
 
     @classmethod
     def _dict_append_data(cls, base, name, input_data, date):
@@ -256,29 +257,29 @@ class ReportService:
                     if display_name == '':
                         display_name = 'abnormal'
                     ordered_data.append((display_name, data[dis_name]))
-            if not os.path.exists(cls.chart_data_path):
-                os.makedirs(cls.chart_data_path)
-            chart_data_file = cls.chart_data_path + '/' + city
+            if not os.path.exists(constants.chart_data_dir):
+                os.makedirs(constants.chart_data_dir)
+            chart_data_file = constants.chart_data_dir + '/' + city
             with open(chart_data_file, "wb") as f:
                 pickle.dump(ordered_data, f)
             shutil.copy(chart_data_file, chart_data_file + '_' + cls.file_time)
 
     @classmethod
     def get_process_file_list(cls):
-        files = os.listdir(cls.base_dir)
+        files = os.listdir(constants.report_data_dir)
         files.sort()
-        file_time = datetime.strptime(CacheService.cache_time, '%Y-%m-%d')
+        file_time = datetime.strptime(CacheService.cache_date, '%Y-%m-%d')
         # 2017-10-09_report_data.tar.gz
-        pattern = "(\d{4})-(\d{2})-(\d{2})" + cls.data_file_suffix + "$"
+        pattern = "(\d{4})-(\d{2})-(\d{2})" + constants.data_file_suffix + "$"
         data_file_pattern = re.compile(pattern)
         res = []
         for tar_file in files:
             if data_file_pattern.match(tar_file):
-                end_index = tar_file.rindex(cls.data_file_suffix)
+                end_index = tar_file.rindex(constants.data_file_suffix)
                 file_datetime_str = tar_file[:end_index]
                 file_datetime = datetime.strptime(file_datetime_str, '%Y-%m-%d')
                 if file_datetime > file_time:
-                    res.append(cls.base_dir + "/" + tar_file)
+                    res.append(constants.report_data_dir + "/" + tar_file)
         cls.logger.info(f"The process file list is: {res}")
         return res
 
@@ -291,8 +292,10 @@ class ReportService:
         cls._reset()
 
         filename = os.path.basename(file)
-        end_index = filename.rindex(cls.data_file_suffix)
+        end_index = filename.rindex(constants.data_file_suffix)
         date = filename[:end_index]
+
+        CacheService.assume_start_date(date)
 
         cls.file_time = date
         cls.logger.info(f"the file time is {cls.file_time}")

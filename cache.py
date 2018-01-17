@@ -48,8 +48,8 @@ class BasicStatistic:
 class CacheService:
     logger = logging.getLogger(__name__)
     base_dir = 'cache_data'
-    cache_time = '2012-01-01'
-
+    cache_date = '2012-01-01'
+    data_start_date = ''
     house_cache_file = 'house_cache'
     daily_cache_file = 'daily_cache'
 
@@ -67,10 +67,11 @@ class CacheService:
         if os.path.exists(file_full_path):
             with open(file_full_path, "rb") as f:
                 cache_tmp = pickle.load(f)
-            time = cache_tmp['time']
+            date = cache_tmp['date']
             data = cache_tmp['data']
-            cls.logger.info(f"Finish load cache file {file_full_path} with {time}")
-            return time, data
+            cls.data_start_date = cache_tmp['start']
+            cls.logger.info(f"Finish load cache file {file_full_path} with {date}")
+            return date, data
         else:
             cls.logger.warning(f"Can't find cache file {file_full_path}")
             return '', None
@@ -81,31 +82,31 @@ class CacheService:
         if not os.path.exists(cls.base_dir):
             os.mkdir(cls.base_dir)
         # load cache
-        house_time, cls.house_cache_data = cls._load_cache(cls.house_cache_file)
-        daily_time, cls.daily_cache_data = cls._load_cache(cls.daily_cache_file)
+        house_date, cls.house_cache_data = cls._load_cache(cls.house_cache_file)
+        daily_date, cls.daily_cache_data = cls._load_cache(cls.daily_cache_file)
 
-        if house_time and daily_time and house_time == daily_time:
-            cls.cache_time = house_time
-            cls.logger.info(f"Calculate statistics with cache of {cls.cache_time}.")
+        if house_date and daily_date and house_date == daily_date:
+            cls.cache_date = house_date
+            cls.logger.info(f"Calculate statistics with cache of {cls.cache_date}.")
         else:
             cls.logger.warning(f"Calculate statistics without cache.")
             cls.house_cache_data = dict()
             cls.daily_cache_data = dict()
 
     @classmethod
-    def _save_cache(cls, file, data, latest_folder_time):
+    def _save_cache(cls, file, data, latest_folder_date):
         file_full_path = cls.base_dir + '/' + file
         cls.logger.info(f"Saving cache file {file_full_path}")
         with open(file_full_path, "wb") as f:
-            pickle.dump(dict(time=latest_folder_time, data=data), f)
-        shutil.copy(file_full_path, file_full_path + '_' + latest_folder_time)
-        cls.logger.info(f"Finish saving cache file {file_full_path} with time {latest_folder_time}")
+            pickle.dump(dict(date=latest_folder_date, data=data, start=cls.data_start_date), f)
+        shutil.copy(file_full_path, file_full_path + '_' + latest_folder_date)
+        cls.logger.info(f"Finish saving cache file {file_full_path} with date {latest_folder_date}")
 
     @classmethod
-    def stop(cls, latest_folder_time):
-        cls.logger.info(f"CacheService is stopping with saving cache of {latest_folder_time}.")
-        cls._save_cache(cls.house_cache_file, cls.house_cache_data, latest_folder_time)
-        cls._save_cache(cls.daily_cache_file, cls.daily_cache_data, latest_folder_time)
+    def stop(cls, latest_folder_date):
+        cls.logger.info(f"CacheService is stopping with saving cache of {latest_folder_date}.")
+        cls._save_cache(cls.house_cache_file, cls.house_cache_data, latest_folder_date)
+        cls._save_cache(cls.daily_cache_file, cls.daily_cache_data, latest_folder_date)
 
         cls.generate_chart_data()
 
@@ -158,8 +159,15 @@ class CacheService:
 
     @classmethod
     def update_daily_data(cls, key, date, data):
+        if date < cls.data_start_date:
+            return
         cls._update_daily_data(date, data['city'], data['district'], key)
-        cls._update_daily_data(date, data['city'], 'total', key)
+        # cls._update_daily_data(date, data['city'], 'total', key)
+
+    @classmethod
+    def assume_start_date(cls, date):
+        if cls.data_start_date == '':
+            cls.data_start_date = date
 
     # @classmethod
     # def _dict_append_data(cls, base, name, input_data, date):
