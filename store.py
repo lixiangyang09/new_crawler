@@ -101,6 +101,7 @@ class OSSClient:
         self.endpoint = "oss-cn-beijing.aliyuncs.com"
         self.auth = oss2.Auth(self.access_key_id, self.access_key_secret)
         self.bucket_ins = oss2.Bucket(self.auth, self.endpoint, self.bucket_name)
+        self.retry_count = 30
 
     def _gen_remote_file_name(self, file):
         file_name = os.path.basename(file)
@@ -121,15 +122,6 @@ class OSSClient:
         with open(local_file, 'rb') as file_obj:
             self.bucket_ins.put_object(remote_file, file_obj)
 
-    def _put_files(self, file_set):
-        # generate remote file name
-        if isinstance(file_set, list):
-            for file in file_set:
-                self.put_file(file, self._gen_remote_file_name(file))
-        elif isinstance(file_set, dict):
-            for local, remote in file_set.items():
-                self.put_file(local, remote)
-
     def get_file(self, remote_file, local_file):
         self.bucket_ins.get_object_to_file(remote_file, local_file)
 
@@ -145,26 +137,73 @@ class OSSClient:
                 os.makedirs(local_output_dir)
             self.get_file(file, local_output_dir + "/" + file_name)
 
-    def upload_file(self, file):
-        if isinstance(file, str):
-            files = [file]
-        else:
-            files = file
+    def upload_file(self, local_file, remote_file=''):
 
         upload_success = False
-        retry_count = 30
         try:
-            for _ in range(retry_count):
-                self._put_files(files)
-                upload_success = True
-                break
+            for _ in range(self.retry_count):
+                if not remote_file:
+                    remote_file = self._gen_remote_file_name(local_file)
+                self.put_file(local_file, remote_file)
+                upload_success = self.check_file_consistency(local_file, remote_file)
+                if upload_success:
+                    break
         except Exception as e:
             logger.warning(f"Upload to oss exception!")
             logger.info(e.__traceback__)
         if upload_success:
             logger.info("upload to oss successfully.")
         else:
-            logger.warning(f"failed to upload data to oss after {retry_count}times")
+            logger.warning(f"failed to upload data to oss after {self.retry_count}times")
+
+    def check_file_consistency(self, local, remote):
+        tmp_check_dir = 'check_data_file'
+        if os.path.exists(tmp_check_dir):
+            shutil.rmtree(tmp_check_dir)
+        os.makedirs(tmp_check_dir)
+
+        local_dir = tmp_check_dir + '/' + 'local'
+        os.mkdir(local_dir)
+        remote_dir = tmp_check_dir + '/remote'
+        os.mkdir(remote_dir)
+
+        local_file = tmp_check_dir + '/local.tar.gz'
+        remote_file = tmp_check_dir + '/remote.tar.gz'
+
+        shutil.copy(local, local_file)
+        self.get_file(remote, remote_file)
+        # check file size
+        if not os.path.getsize(local_file) == os.path.getsize(remote_file):
+            logger.warning('tar file size not equal')
+            return False
+
+        FileService.unpack_file(local_file, local_dir)
+        FileService.unpack_file(remote_file, remote_dir)
+
+        local_contents = []
+        remote_contents = []
+        for root, directories, filenames in os.walk(local_dir):
+            for filename in filenames:
+                local_contents.append(os.path.join(root, filename))
+        for root, directories, filenames in os.walk(remote_dir):
+            for filename in filenames:
+                remote_contents.append(os.path.join(root, filename))
+
+        if not len(local_contents) == len(remote_contents):
+            logger.warning('File count not equal')
+            return False
+
+        for file in local_contents:
+            remote_file = file.replace('local', 'remote')
+            if remote_file in remote_contents:
+                if os.path.getsize(remote_file) == os.path.getsize(remote_file):
+                    pass
+                else:
+                    logger.warning(f'{file} not equal {remote_file}')
+            else:
+                logger.warning(f'Not found file {remote_file}')
+        logger.info(f"File upload successfully.")
+        return True
 
 
 if __name__ == '__main__':
@@ -172,4 +211,5 @@ if __name__ == '__main__':
     # RedisService.send_msg(test_data)
     # msgs = RedisService.receive_msg()
     # print(msgs)
-    pass
+    oss_client = OSSClient("buaacraft", "lxy", "/")
+    oss_client.upload_file('./report_data/2017-12-30_report_data.tar.gz')

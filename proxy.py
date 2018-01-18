@@ -142,9 +142,9 @@ class ProxyService:
         with cls.lock:
             if not cls.appeared.exist(proxy_instance.hash_code):
                 cls.logger.info(f"Found new proxy, {proxy_instance}")
+                cls._update_proxy(proxy_instance, datetime.now())
                 cls.proxies.put_nowait(proxy_instance)
                 cls.proxy_all[proxy_instance.hash_code] = proxy_instance
-                cls._update_proxy(proxy_instance, datetime.now())
                 cls.appeared.add(proxy_instance.hash_code)
 
                 StatusService.put(proxy_instance.hash_code)

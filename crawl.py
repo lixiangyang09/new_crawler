@@ -38,6 +38,7 @@ class CrawlService:
     number_threads = 4
     semaphore = BoundedSemaphore(number_threads)
     run_context = RunContext()
+    seed_wait_time = 2
 
     @classmethod
     def start(cls):
@@ -53,11 +54,13 @@ class CrawlService:
             if seed is None:
                 cls.semaphore.release()
                 if cls.run_context.is_running:
-                    time.sleep(2)  # maybe the running thread will generate new seed
+                    time.sleep(cls.seed_wait_time)  # maybe the running thread will generate new seed
+                    cls.seed_wait_time += 2
                     continue
                 else:
                     break
             else:
+                cls.seed_wait_time = 2
                 future = pool.submit(cls._crawl_framework, seed)
                 futures.append(future)
 

@@ -81,6 +81,7 @@ class ReportService:
     total_data_files = 0
 
     daily_houses_string = House.get_header() + '\n'
+    oss_client = OSSClient("buaacraft", "lxy", "/")
 
     @classmethod
     def _reset(cls):
@@ -152,7 +153,7 @@ class ReportService:
 
         if "下架" in house.status or "成交" in house.status:
             # because the down may be crawled multi days, so remove it.
-            if "下架" in house_cache['status'] or "成交" in house_cache['status']:
+            if house_cache and ("下架" in house_cache['status'] or "成交" in house_cache['status']):
                 # duplicate crawling
                 return
             else:
@@ -169,13 +170,15 @@ class ReportService:
         else:
             CacheService.update_daily_data('total', cls.file_time, house.__dict__)
 
-            if house_cache is None:
+            if house_cache is None or "下架" in house_cache['status']:
+                # "下架" in house_cache.status, the house is back to sell again.
                 CacheService.update_daily_data('up', house.listed_time, house.__dict__)
-                CacheService.update_daily_data('total', house.listed_time, house.__dict__)
+                if house_cache is None:
+                    CacheService.update_daily_data('total', house.listed_time, house.__dict__)
 
             price_now = house.total_price
             if house_cache:
-                price_last = house_cache.total_price
+                price_last = house_cache['total_price']
                 if price_last < price_now:
                     CacheService.update_daily_data('inc', cls.file_time, house.__dict__)
                     house.status = "涨价"
@@ -224,11 +227,11 @@ class ReportService:
     @classmethod
     def _dict_append_data(cls, base, name, input_data, date):
         base[name]['x_data'].append(date)
-        base[name]['on'].append(input_data.total)
-        base[name]['up'].append(input_data.up)
-        base[name]['down'].append(input_data.down)
-        base[name]['inc'].append(input_data.inc)
-        base[name]['dec'].append(input_data.dec)
+        base[name]['on'].append(input_data['total'])
+        base[name]['up'].append(input_data['up'])
+        base[name]['down'].append(input_data['down'])
+        base[name]['inc'].append(input_data['inc'])
+        base[name]['dec'].append(input_data['dec'])
 
     @classmethod
     def _gen_char_data(cls):

@@ -162,7 +162,7 @@ class CacheService:
         if date < cls.data_start_date:
             return
         cls._update_daily_data(date, data['city'], data['district'], key)
-        # cls._update_daily_data(date, data['city'], 'total', key)
+        cls._update_daily_data(date, data['city'], 'total', key)
 
     @classmethod
     def assume_start_date(cls, date):
