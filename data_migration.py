@@ -76,7 +76,7 @@ def fresh_hash():
                 data_str = FileService.load_file(data_file)
                 data_obj = ast.literal_eval(data_str)
                 data_obj['city'] = 'bj'
-                data_obj['hash_code'] = util.get_hash('https://bj.lianjia.com/ershoufang/'
+                data_obj['hash_code'] = util.gen_hash('https://bj.lianjia.com/ershoufang/'
                                                       + data_obj['id'] + '.html')
                 FileService.save_file(dir_result + '/' + date, os.path.basename(data_file), data_obj)
 
@@ -146,9 +146,9 @@ def csv_to_data():
                         'view_count': tokens[11],
                         'status': tokens[12],
                         'deal_period': tokens[13],
-                        'hash_code': util.get_hash('https://bj.lianjia.com/ershoufang/' + tokens[0] + '.html')}
+                        'hash_code': util.gen_hash('https://bj.lianjia.com/ershoufang/' + tokens[0] + '.html')}
                 FileService.save_file(output_folder, str(util.get_uuid()), data)
-                seed_file.write(f"{data['hash_code']},content,page,lianjia,"
+                seed_file.write(f"{data['hash_code']},lianjia,"
                                 f"https://bj.lianjia.com/ershoufang/{tokens[0]}.html\n")
     seed_file.close()
 
@@ -171,24 +171,27 @@ def rename_folder():
 def merge_seeds():
     seeds_base_dir = '/Users/dev/lianjia/seeds/'
     result_dir = '/Users/dev/lianjia/result/'
-    bj_seeds = os.listdir(seeds_base_dir + 'beijing')
+    bj_seeds = [seed for seed in os.listdir(seeds_base_dir + 'beijing') if seed.startswith('seeds')]
     cd_seeds = os.listdir(seeds_base_dir + 'chengdu')
     for bj_seed in bj_seeds:
+        print(bj_seed)
         with open(result_dir + bj_seed, 'w') as out_handle:
             with open(seeds_base_dir + 'beijing/' + bj_seed) as in_handle:
                 for line in in_handle:
-                    if util.get_hash(line):
-                        out_handle.write(line)
+                    if util.get_line_hash(line):
+                        url = line.strip().split(',')[2]
+                        res = util.gen_hash(url) + ',content,page,lianjia,' + url + '\n'
+                        out_handle.write(res)
             if bj_seed in cd_seeds:
                 with open(seeds_base_dir + 'chengdu/' + bj_seed) as in_handle:
                     for line in in_handle:
-                        if util.get_hash(line):
+                        if util.get_line_hash(line):
                             out_handle.write(line)
 
 
 if __name__ == '__main__':
     fresh_hash()
-    csv_to_data()
+    # csv_to_data()
     rename_folder()
     merge_seeds()
 

@@ -29,7 +29,7 @@ class ProcessorInterface(object):
             return
         for target, urls in data.items():
             for url in urls:
-                hash_code = util.get_hash(url)
+                hash_code = util.gen_hash(url)
                 seed = SeedsService.get_template(self.indicator, target, source)
                 seed.url = url
                 seed.hash_code = hash_code
@@ -83,7 +83,7 @@ class ProxyProcessor(ProcessorInterface):
         for k in zip(ips, ports, types):
             if self.validate_ip(k[0]):
                 proxy_type = self.edit_http_type(k[2])
-                hash_code = util.get_hash(k[0] + ":" + k[1])
+                hash_code = util.gen_hash(k[0] + ":" + k[1])
                 new_proxy_instance = Proxy(hash_code, k[0], k[1], proxy_type)
                 ProxyService.put(new_proxy_instance)
 

@@ -70,7 +70,7 @@ class Seed:
         self.hash_code = hash_code
 
     def update_hash(self):
-        self.hash_code = util.get_hash(self.url)
+        self.hash_code = util.gen_hash(self.url)
 
     def __repr__(self):
         return self.hash_code + ',' + self.type + ',' + self.target + ',' + self.source + ',' + self.url

@@ -64,7 +64,7 @@ class House:
 
     def __repr__(self):
         return f"{self.ind},{self.total_price},{self.area}," \
-               f"{format(self.unit_price, '5.2f')},{self.cmt_id},{self.cmt_name}," \
+               f"{format(self.unit_price, '.2f')},{self.cmt_id},{self.cmt_name}," \
                f"{self.district},{self.sub_district}," \
                f"{self.city},{self.source},{self.fav_count}," \
                f"{self.view_count},{self.status},{self.listed_time},{self.deal_period},{self.vary}"
@@ -114,6 +114,12 @@ class ReportService:
         data_str = FileService.load_file(file)
         data = ast.literal_eval(data_str)
 
+        check_list = ['district', 'listed_time']
+        for check in check_list:
+            if check not in data:
+                cls.logger.error(f"Abnormal data! field {check} not in {data} of file {file}")
+                return None
+
         house = House()
         house.ind = data["id"]
         house.status = data['status']
@@ -139,14 +145,15 @@ class ReportService:
         house.sub_district = data['subdistrict']
         house.cmt_id = cmt_id
         house.cmt_link = cmt_link
-        if not house.district:
-            cls.logger.error(f"Abnormal data: {house}")
+
 
         return house
 
     @classmethod
     def _process_file(cls, file):
         house = cls._parse_data_to_house(file)
+        if house is None:
+            return
         cls.total_data_files += 1
 
         house_cache = CacheService.get_house(house.hash_code)
@@ -170,11 +177,15 @@ class ReportService:
         else:
             CacheService.update_daily_data('total', cls.file_time, house.__dict__)
 
-            if house_cache is None or "下架" in house_cache['status']:
-                # "下架" in house_cache.status, the house is back to sell again.
+            if house_cache is None:
                 CacheService.update_daily_data('up', house.listed_time, house.__dict__)
-                if house_cache is None:
-                    CacheService.update_daily_data('total', house.listed_time, house.__dict__)
+                CacheService.update_daily_data('total', house.listed_time, house.__dict__)
+                cls.logger.info(f"New house: {house}")
+
+            if house_cache and "下架" in house_cache['status']:
+                # "下架" in house_cache.status, the house is back to sell again.
+                CacheService.update_daily_data('up', cls.file_time, house.__dict__)
+                cls.logger.info(f"New house: {house}")
 
             price_now = house.total_price
             if house_cache:

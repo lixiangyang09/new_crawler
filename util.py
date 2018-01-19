@@ -14,7 +14,7 @@ import smtplib
 start_date = str(date.today())
 
 
-def get_hash(data):
+def gen_hash(data):
     code = hashlib.md5(data.encode('utf-8')).hexdigest()
     return code
 

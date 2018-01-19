@@ -52,9 +52,9 @@ from store import FileService
 # for file in files:
 #     data_str = FileService.load_file(path + '/' + file)
 #     data = ast.literal_eval(data_str)
-#     data['hash_code'] = util.get_hash('https://cd.lianjia.com/ershoufang/' + data['id'] + '.html')
+#     data['hash_code'] = util.gen_hash('https://cd.lianjia.com/ershoufang/' + data['id'] + '.html')
 #     FileService.save_file(path, file, data)
-# a = (util.get_hash('https://bj.lianjia.com/ershoufang/101102422688.html'))
+# a = (util.gen_hash('https://bj.lianjia.com/ershoufang/101102422688.html'))
 # print(a)
 # input_file = input("input file full path")
 # output_file = input("output file full path")
@@ -65,7 +65,7 @@ from store import FileService
 #             hash_code = util.get_line_hash(line)
 #             tokens = line.strip().split(',')
 #             if hash_code:
-#                 output_line = util.get_hash(tokens[2]) + ',content,page,lianjia,' + tokens[2] + '\n'
+#                 output_line = util.gen_hash(tokens[2]) + ',content,page,lianjia,' + tokens[2] + '\n'
 #                 output_handle.write(output_line)
 #
 #
