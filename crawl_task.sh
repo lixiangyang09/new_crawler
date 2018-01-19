@@ -7,3 +7,5 @@ echo "source"
 . .venv/bin/activate
 echo "start crawl"
 python main.py
+echo "gen report"
+python report.py
