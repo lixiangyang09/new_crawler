@@ -343,7 +343,7 @@ class ReportService:
         notify data folder
         :return:
         """
-        keeping_days = 3
+        keeping_days = 14
         cls.logger.info(f"Start doing house keeping, will only keep latest {keeping_days} data.")
         today_date = datetime.strptime(util.start_date, '%Y-%m-%d')
         target_date = today_date - timedelta(days=keeping_days)
