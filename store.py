@@ -9,23 +9,21 @@ import os
 import tarfile
 import re
 import oss2
-from futile.queue.redis_queue import QueueProducer, QueueConsumer
-
+from futile.queue.redis_queue import get_redis_client, QueueProducer, QueueConsumer
 
 logger = logging.getLogger("StoreService")
 
 
 class RedisService:
 
-    topic = "lxy_test"
-
-    producer = QueueProducer('10.1.1.3', '6379')
-    consumer = QueueConsumer('10.1.1.3', '6379', topic, 'test')
+    topic = "crawl_house"
+    redis_client = get_redis_client('10.1.1.3')
+    producer = QueueProducer(redis_client)
+    consumer = QueueConsumer(redis_client, topic, 'test')
 
     @classmethod
     def send_msg(cls, data):
-        # cls.producer.send_events(cls.topic, [data])
-        pass
+        cls.producer.send_events(cls.topic, [data])
 
     @classmethod
     def receive_msg(cls):
@@ -138,7 +136,7 @@ class OSSClient:
             self.get_file(file, local_output_dir + "/" + file_name)
 
     def upload_file(self, local_file, remote_file=''):
-
+        logger.info(f"Beging to upload {local_file} to oss.")
         upload_success = False
         try:
             for _ in range(self.retry_count):
@@ -154,7 +152,7 @@ class OSSClient:
         if upload_success:
             logger.info("upload to oss successfully.")
         else:
-            logger.warning(f"failed to upload data to oss after {self.retry_count}times")
+            logger.warning(f"failed to upload {local_file} to oss after {self.retry_count}times")
 
     def check_file_consistency(self, local, remote):
         tmp_check_dir = 'check_data_file'
@@ -202,7 +200,9 @@ class OSSClient:
                     logger.warning(f'{file} not equal {remote_file}')
             else:
                 logger.warning(f'Not found file {remote_file}')
-        logger.info(f"File upload successfully.")
+        if os.path.exists(tmp_check_dir):
+            shutil.rmtree(tmp_check_dir)
+        logger.info(f"File upload successfully after check.")
         return True
 
 

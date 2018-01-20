@@ -30,7 +30,7 @@ def get_file_line_count(file):
 def fresh_hash():
     dir_source_base = '/Users/dev/lianjia/'
 
-    dir_beijing = dir_source_base + 'beijing_org'
+    dir_beijing = dir_source_base + 'beijing'
 
     dir_chengdu = dir_source_base + 'chengdu'
 
@@ -92,8 +92,16 @@ def fresh_hash():
             print(f"file count {file_count}")
             print('\n')
             for data_file in files:
+                file_name = os.path.basename(data_file)
                 data_str = FileService.load_file(chengdu_dir + '/' + data_file)
-                FileService.save_file(dir_result + '/' + date, os.path.basename(data_file), data_str)
+                if os.path.exists(dir_result + '/' + date + '/' + file_name):
+                    print(f"Already exist {file_name} in {dir_result + '/' + date}")
+                    file_name = str(util.get_uuid())
+                FileService.save_file(dir_result + '/' + date, file_name, data_str)
+        for res_folder in os.listdir(dir_result):
+            res_files = os.listdir(dir_result + '/' + res_folder)
+            res_file_count = len(res_files)
+            print(f"Result file count {res_folder}: {res_file_count}")
     except BaseException:
         print(data_file)
         print(data_str)
@@ -190,9 +198,9 @@ def merge_seeds():
 
 
 if __name__ == '__main__':
-    fresh_hash()
+    #fresh_hash()
     # csv_to_data()
-    rename_folder()
+    #rename_folder()
     merge_seeds()
 
 

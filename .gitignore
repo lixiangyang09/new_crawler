@@ -13,3 +13,6 @@ shell.log
 cache_data/
 report_data_convert/
 .DS_Store
+check_data_file/
+notify_data/
+report_tmp_dir/

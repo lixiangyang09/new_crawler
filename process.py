@@ -42,6 +42,7 @@ class ContentProcessor(ProcessorInterface):
         super(ContentProcessor, self).__init__('content')
 
     def process_page_data(self, data):
+        data['date'] = util.start_date
         FileService.save_data(data)
         RedisService.send_msg(data)
 

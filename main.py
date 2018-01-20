@@ -24,8 +24,9 @@ logger = logging.getLogger(__name__)
 def main():
     # init folder
     output_dir = util.get_output_data_dir()
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir)
 
     # init services
     SeedsService.start()

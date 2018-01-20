@@ -81,7 +81,7 @@ class ReportService:
     total_data_files = 0
 
     daily_houses_string = House.get_header() + '\n'
-    oss_client = OSSClient("buaacraft", "lxy", "/")
+    oss_client = OSSClient("buaacraft", "lxy_new_crawl", "/")
 
     @classmethod
     def _reset(cls):
@@ -106,7 +106,7 @@ class ReportService:
             shutil.copy(seed_file_old_version, cls.seed_file)
 
         files = os.listdir(cls.tmp_dir + '/' + date)
-        res = [cls.tmp_dir + '/' + date + '/' + file for file in files]
+        res = [cls.tmp_dir + '/' + date + '/' + file for file in files if not file.startswith('.')]
         return res
 
     @classmethod
@@ -180,12 +180,10 @@ class ReportService:
             if house_cache is None:
                 CacheService.update_daily_data('up', house.listed_time, house.__dict__)
                 CacheService.update_daily_data('total', house.listed_time, house.__dict__)
-                cls.logger.info(f"New house: {house}")
 
             if house_cache and "下架" in house_cache['status']:
                 # "下架" in house_cache.status, the house is back to sell again.
                 CacheService.update_daily_data('up', cls.file_time, house.__dict__)
-                cls.logger.info(f"New house: {house}")
 
             price_now = house.total_price
             if house_cache:
@@ -215,7 +213,7 @@ class ReportService:
     def _send_notification(cls):
         cls.logger.info(f"Send notification.")
         daily_total_house_file = cls.file_time + "_house_status.csv"
-        FileService.save_file(cls.tmp_dir, daily_total_house_file, cls.daily_houses_string, 'utf_8_sig')
+        FileService.save_file(constants.notifies_dir, daily_total_house_file, cls.daily_houses_string, 'utf_8_sig')
 
         chart_address = "\n" + "曲线图：http://hkdev.yifei.me:8080/basic_statistic/" + "\n"
 
@@ -223,14 +221,15 @@ class ReportService:
 
         user_msg = f"{cls.file_time} \n" + basic_report + chart_address
 
-        email_subject = f"{cls.file_time} 链家报告 test of new crawler"
-        # util.send_mail("562315079@qq.com", "qlwhrvzayytcbche",
-        #                #["562315079@qq.com", "kongyifei@gmail.com", "gaohangtian1003@163.com", "lbxxy@sina.com"],
-        #                ["562315079@qq.com"],
-        #                email_subject, user_msg, [cls.tmp_dir + "/" + daily_total_house_file])
+        email_subject = f"{cls.file_time} 链家报告 of new crawler"
+        util.send_mail("562315079@qq.com", "qlwhrvzayytcbche",
+                       # ["562315079@qq.com", "kongyifei@gmail.com", "gaohangtian1003@163.com", "lbxxy@sina.com"],
+                       ["562315079@qq.com"],
+                       email_subject, user_msg, [constants.notifies_dir + "/" + daily_total_house_file])
 
         developer_msg = user_msg + '\n'
 
+        cls.logger.info(developer_msg)
         print(email_subject + '\n')
         print(developer_msg)
         # time.sleep(10)
@@ -298,14 +297,15 @@ class ReportService:
         return res
 
     @classmethod
-    def gen_report(cls, file):
+    def gen_report(cls, packed_file):
+        cls.logger.info(f"Generate report of {packed_file}")
         if os.path.exists(cls.tmp_dir):
             shutil.rmtree(cls.tmp_dir)
         os.makedirs(cls.tmp_dir)
 
         cls._reset()
 
-        filename = os.path.basename(file)
+        filename = os.path.basename(packed_file)
         end_index = filename.rindex(constants.data_file_suffix)
         date = filename[:end_index]
 
@@ -327,7 +327,77 @@ class ReportService:
         CacheService.fresh_seed_file(cls.seed_file)
 
         # upload today's data
-        # cls.oss_client.upload_file(file)
+        cls.oss_client.upload_file(packed_file)
+
+        if os.path.exists(cls.tmp_dir):
+            shutil.rmtree(cls.tmp_dir)
+
+    @classmethod
+    def house_keeping(cls):
+        """
+        This function is used to clean the out of date data.
+        output folder,
+        database folder,
+        log folder,
+        report_data folder
+        notify data folder
+        :return:
+        """
+        keeping_days = 3
+        cls.logger.info(f"Start doing house keeping, will only keep latest {keeping_days} data.")
+        today_date = datetime.strptime(util.start_date, '%Y-%m-%d')
+        target_date = today_date - timedelta(days=keeping_days)
+        target_date_str = target_date.strftime('%Y-%m-%d')
+        # clean the output folder
+        data_folders = os.listdir(constants.output_base_dir)
+        for data_folder in data_folders:
+            full_path = constants.output_base_dir + '/' + data_folder
+            if os.path.isdir(full_path) and data_folder < target_date_str:
+                shutil.rmtree(full_path)
+                cls.logger.info(f"Remove data folder {full_path}")
+
+        # clean the datebase folder
+        # new_seeds_2018-01-19, seeds_2018-01-19
+        seeds_files = [file for file in os.listdir(constants.database_dir)
+                       if file.startswith('seeds') or file.startswith('new_seeds')]
+        for seed_file in seeds_files:
+            seed_file_index = seed_file.rfind('_')
+            if seed_file_index > -1:
+                seed_date = seed_file[seed_file_index + 1:]
+                if seed_date < target_date_str:
+                    os.remove(constants.database_dir + '/' + seed_file)
+                    cls.logger.info(f"Remove seed file {constants.database_dir + '/' + seed_file}")
+
+        # log file
+        # 2018-01-04_crawl.log
+        log_files = os.listdir('log')
+        for log_file in log_files:
+            log_file_index = log_file.find('_')
+            if log_file_index > -1:
+                log_date = log_file[:log_file_index]
+                if log_date < target_date_str:
+                    os.remove('log/' + log_file)
+                    cls.logger.info(f"Remove log file {'log/' + log_file}")
+
+        # report_data folder
+        report_datas = os.listdir(constants.report_data_dir)
+        for report_data in report_datas:
+            report_data_index = report_data.find('_')
+            if report_data_index > -1:
+                report_data_date = report_data[: report_data_index]
+                if report_data_date < target_date_str:
+                    os.remove(constants.report_data_dir + '/' + report_data)
+                    cls.logger.info(f"Remove report data {constants.report_data_dir + '/' + report_data}")
+
+        # notify data folder
+        notify_datas = os.listdir(constants.notifies_dir)
+        for notify_data in notify_datas:
+            notify_data_index = notify_data.find('_')
+            if notify_data_index > -1:
+                notify_data_date = notify_data[: notify_data_index]
+                if notify_data_date < target_date_str:
+                    os.remove(constants.notifies_dir + '/' + notify_data)
+                    cls.logger.info(f"Remove notify data {constants.notifies_dir + '/' + notify_data}")
 
     @classmethod
     def work(cls):
@@ -347,6 +417,8 @@ class ReportService:
             cls._gen_char_data()
         else:
             cls.logger.warning(f"No need to generate report, because of the data is not newer than cache.")
+
+        cls.house_keeping()
 
 
 if __name__ == '__main__':
