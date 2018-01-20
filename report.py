@@ -145,8 +145,6 @@ class ReportService:
         house.sub_district = data['subdistrict']
         house.cmt_id = cmt_id
         house.cmt_link = cmt_link
-
-
         return house
 
     @classmethod
@@ -206,7 +204,10 @@ class ReportService:
         for city, dises in daily_data.items():
             res += f'{city}:\n'
             for dis_name, dis_data in dises.items():
-                res += f'    {dis_name}: {dis_data} \n'
+                res += f'    {dis_name}: '
+                for dis_field_name, dis_field_value in dis_data.items():
+                    res += f'{dis_field_name}: {dis_field_value}'
+                res += '\n'
         return res
 
     @classmethod
@@ -215,13 +216,15 @@ class ReportService:
         daily_total_house_file = cls.file_time + "_house_status.csv"
         FileService.save_file(constants.notifies_dir, daily_total_house_file, cls.daily_houses_string, 'utf_8_sig')
 
-        chart_address = "\n" + "曲线图：http://hkdev.yifei.me:8080/basic_statistic/" + "\n"
-
+        chart_address = "\n" + "北京：http://stats.yifei.me/basic_statistic/bj/" + "\n" \
+                             + "成都：http://stats.yifei.me/basic_statistic/cd/" + "\n"
         basic_report = cls._generate_daily_basic_report()
 
-        user_msg = f"{cls.file_time} \n" + basic_report + chart_address
+        note_msg = "若当天的下架数量为0，有可能是当天数据爬取失败。\n"
 
-        email_subject = f"{cls.file_time} 链家报告 of new crawler"
+        user_msg = f"{cls.file_time} \n" + basic_report + chart_address + note_msg
+
+        email_subject = f"{cls.file_time} 链家报告"
         util.send_mail("562315079@qq.com", "qlwhrvzayytcbche",
                        # ["562315079@qq.com", "kongyifei@gmail.com", "gaohangtian1003@163.com", "lbxxy@sina.com"],
                        ["562315079@qq.com"],
@@ -419,6 +422,7 @@ class ReportService:
             cls.logger.warning(f"No need to generate report, because of the data is not newer than cache.")
 
         cls.house_keeping()
+        cls.logger.info(f"Finish reporting.")
 
 
 if __name__ == '__main__':

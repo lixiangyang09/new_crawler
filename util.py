@@ -12,6 +12,7 @@ from email.mime.text import MIMEText
 import smtplib
 
 start_date = str(date.today())
+start_time = datetime.now()
 
 
 def gen_hash(data):

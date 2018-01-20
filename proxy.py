@@ -7,7 +7,6 @@ import logging
 from queue import Empty
 import os
 from sync_set import SyncSet
-from config import ConfigService
 import util
 import constants
 
@@ -94,6 +93,8 @@ class StatusService:
 
 
 class ProxyService:
+    start_proxy_count = 0
+    stop_proxy_count = 0
     # the process that story all current crawled proxies
     proxy_all = {}
     # proxies that used in current program
@@ -184,21 +185,24 @@ class ProxyService:
                 cls.logger.info(f"Totally load {str(proxy_db_count)} proxies from {constants.proxy_file}")
         else:
             cls.logger.warning(f"can't find {constants.proxy_file} file")
+        cls.start_proxy_count += proxy_raw_count + proxy_db_count
 
     @classmethod
     def stop(cls):
-        proxy_db_count = 0
         with open(constants.proxy_file, 'w') as f:
             for proxy in cls.proxy_all.values():
                 output = str(proxy) + "\n"
                 f.write(output)
-                proxy_db_count += 1
-        cls.logger.info(f"Write back {str(proxy_db_count)} proxies.")
+                cls.stop_proxy_count += 1
+        cls.logger.info(f"Write back {str(cls.stop_proxy_count)} proxies.")
 
-        email_subject = f"{datetime.now()} proxy report"
+        email_subject = f"{util.start_date} new crawler proxy report"
+        msg = f"Start with {cls.start_proxy_count} proxies, stop with {cls.stop_proxy_count} proxies.\n"
+        msg += f"Start time {util.start_time}, stop time {datetime.now()}"
+        msg += cls.generate_report()
         util.send_mail("562315079@qq.com", "qlwhrvzayytcbche",
                        ["562315079@qq.com"],
-                       email_subject, cls.generate_report())
+                       email_subject, msg)
         cls.logger.info(f"Finish sending proxy report.")
 
     @classmethod
