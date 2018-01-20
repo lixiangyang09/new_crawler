@@ -207,9 +207,9 @@ class OSSClient:
 
 
 if __name__ == '__main__':
-    # test_data = {'a': 1, 'b': 2}
-    # RedisService.send_msg(test_data)
-    # msgs = RedisService.receive_msg()
-    # print(msgs)
-    oss_client = OSSClient("buaacraft", "lxy", "/")
-    oss_client.upload_file('./report_data/2017-12-30_report_data.tar.gz')
+    test_data = {'a': 1, 'b': 2}
+    RedisService.send_msg(test_data)
+    msgs = RedisService.receive_msg()
+    print(msgs)
+    # oss_client = OSSClient("buaacraft", "lxy", "/")
+    # oss_client.upload_file('./report_data/2017-12-30_report_data.tar.gz')
