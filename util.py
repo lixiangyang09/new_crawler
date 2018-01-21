@@ -63,3 +63,10 @@ def get_line_hash(line):
         if len(tokens) > 1:
             res = tokens[0]
     return res
+
+
+def get_file_md5(file_full_path):
+    md5file = open(file_full_path)
+    md5 = hashlib.md5(md5file.read()).hexdigest()
+    md5file.close()
+    return md5
