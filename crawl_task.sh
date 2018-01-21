@@ -1,6 +1,6 @@
 export PYTHONPATH=$HOME/repos:$HOME/repos/futile
 
-cd /home/lixiangyang/new_crawler
+cd /data/lixiangyang/new_crawler
 echo "git pull"
 git pull
 echo "source"

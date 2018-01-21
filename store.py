@@ -177,7 +177,7 @@ class OSSClient:
         if not local_md5 == remote_md5:
             logger.warning('tar file md5 not same')
             return False
-        
+
         # check file size
         if not os.path.getsize(local_file) == os.path.getsize(remote_file):
             logger.warning('tar file size not equal')
