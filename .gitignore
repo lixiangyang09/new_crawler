@@ -16,3 +16,4 @@ report_data_convert/
 check_data_file/
 notify_data/
 report_tmp_dir/
+report.log
