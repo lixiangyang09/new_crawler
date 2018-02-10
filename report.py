@@ -128,6 +128,8 @@ class ReportService:
         house.total_price = float(data["price"])
         house.unit_price = float(data["unit_price"]) / 10000.0
         house.listed_time = data["listed_time"]
+        if not house.listed_time:
+            house.listed_time = cls.file_time
         house.hash_code = data['hash_code']
         house.source = data['source']
         house.city = data['city']
