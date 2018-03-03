@@ -8,6 +8,8 @@ from crawl import CrawlService
 from datetime import datetime
 from seeds import SeedsService
 from proxy import ProxyService
+import bj_jianwei
+
 
 if not os.path.exists('log'):
     os.mkdir('log')
@@ -45,3 +47,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    bj_jianwei.crawl_data()

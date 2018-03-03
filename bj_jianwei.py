@@ -7,7 +7,7 @@ from lxml import html
 import util
 import os
 import datetime
-
+import constants
 
 def extract_data(monthly_header, monthly_data, daily_title, daily_header, daily_data):
     final_data = []
@@ -57,7 +57,7 @@ def extract_data(monthly_header, monthly_data, daily_title, daily_header, daily_
 
 
 def save_data(output_data):
-    output_path = os.path.join(util.get_output_base_dir(), 'jianwei')
+    output_path = os.path.join(util.get_output_base_dir(), util.get_jianwei_data_dir())
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     file_name = datetime.datetime.now().strftime("%Y-%m-%d")

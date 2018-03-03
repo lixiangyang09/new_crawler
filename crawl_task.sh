@@ -10,4 +10,3 @@ python main.py
 echo "gen report"
 python report.py
 
-python bj_jianwei.py

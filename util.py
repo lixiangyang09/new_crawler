@@ -37,6 +37,10 @@ def get_tmp_data_dir():
     return os.path.join(constants.tmp_data_dir, start_date)
 
 
+def get_jianwei_data_dir():
+    return os.path.join(get_output_base_dir(), constants.jianwei_data_dir)
+
+
 def send_mail(from_address, passwd, to_addresses, subject, msg_body, attachments=[]):
     msg = MIMEMultipart()
     msg['From'] = from_address

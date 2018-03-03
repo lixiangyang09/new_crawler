@@ -20,7 +20,7 @@ import copy
 import time
 import constants
 import pack_data
-
+import bj_jianwei_report
 
 if not os.path.exists('log'):
     os.mkdir('log')
@@ -219,7 +219,9 @@ class ReportService:
         FileService.save_file(constants.notifies_dir, daily_total_house_file, cls.daily_houses_string, 'utf_8_sig')
 
         chart_address = "\n" + "北京：http://stats.yifei.me/basic_statistic/bj/" + "\n" \
-                             + "成都：http://stats.yifei.me/basic_statistic/cd/" + "\n"
+                             + "成都：http://stats.yifei.me/basic_statistic/cd/" + "\n" \
+                             + '建委月数据： http://stats.yifei.me/jianwei/monthly/' + '\n' \
+                             + '建委天数据： http://stats.yifei.me/jianwei/daily/' + '\n'
         basic_report = cls._generate_daily_basic_report()
 
         note_msg = "若当天的下架数量,涨价数量，降价数量同时为0时，有可能是当天数据爬取失败。\n"
@@ -437,6 +439,6 @@ class ReportService:
 
 if __name__ == '__main__':
     ReportService.work()
-
+    bj_jianwei_report.BJJianweiReport.work()
 
 
