@@ -348,6 +348,7 @@ class ReportService:
         log folder,
         report_data folder
         notify data folder
+        chart data folder
         :return:
         """
         keeping_days = 7
@@ -413,6 +414,13 @@ class ReportService:
                 os.remove(constants.tmp_data_dir + '/' + tmp_data)
                 cls.logger.info(f"Remove tmp data {constants.tmp_data_dir + '/' + tmp_data}")
 
+        # chart data
+        chart_datas = os.listdir(constants.chart_data_dir)
+        for file in chart_datas:
+            if ('cd_' in file and file < 'cd_' + target_date_str) or \
+               ('bj_' in file and file < 'bj_' + target_date_str):
+                os.remove(constants.chart_data_dir + '/' + file)
+                cls.logger.info(f"Remove chart data {constants.target_date_str + '/' + file}")
 
     @classmethod
     def work(cls):
