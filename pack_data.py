@@ -7,6 +7,7 @@ import util
 import os
 import constants
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,10 @@ def pack_report_data():
     else:
         packed_files = []
     packed_files_date = [os.path.basename(packed)[:os.path.basename(packed).rindex(constants.data_file_suffix)] for packed in packed_files]
-    data_folders = [folder for folder in os.listdir(output_base_dir) if os.path.isdir(output_base_dir + '/' + folder)]
+    folder_pattern = re.compile('\d{4}-\d{2}-\d{2}')
+    data_folders = [folder for folder in os.listdir(output_base_dir)
+                    if os.path.isdir(output_base_dir + '/' + folder)
+                    and folder_pattern.match(folder)]
     for data_folder in data_folders:
         if data_folder not in packed_files_date:
             seeds_file = constants.seeds_file + '_' + data_folder
