@@ -420,7 +420,7 @@ class ReportService:
             if ('cd_' in file and file < 'cd_' + target_date_str) or \
                ('bj_' in file and file < 'bj_' + target_date_str):
                 os.remove(constants.chart_data_dir + '/' + file)
-                cls.logger.info(f"Remove chart data {constants.target_date_str + '/' + file}")
+                cls.logger.info(f"Remove chart data {constants.chart_data_dir + '/' + file}")
 
     @classmethod
     def work(cls):
