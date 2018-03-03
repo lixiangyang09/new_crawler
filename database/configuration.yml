@@ -143,7 +143,7 @@ seeds_template:
                             - //span[@id="cartCount"]/text()
                             - (//div[@class="overview"]/div[@class="info fr"]/div[@class="msg"]//label)[4]/text()
                     room_count: (//div[@class="base"]//li)[1]/text()
-                    listed_time: (//div[@class="transaction"]//li)[1]/text()
+                    listed_time: (//div[@class="transaction"]//span)[2]/text()
                     deal_period:
                         xpath:
                             - (//div[@class="overview"]/div[@class="info fr"]/div[@class="msg"]//label)[2]/text()

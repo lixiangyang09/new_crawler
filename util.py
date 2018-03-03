@@ -10,6 +10,7 @@ from email import encoders
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
+import constants
 
 start_date = str(date.today())
 start_time = datetime.now()
@@ -30,6 +31,10 @@ def get_output_base_dir():
 
 def get_output_data_dir():
     return get_output_base_dir() + "/" + start_date
+
+
+def get_tmp_data_dir():
+    return os.path.join(constants.tmp_data_dir, start_date)
 
 
 def send_mail(from_address, passwd, to_addresses, subject, msg_body, attachments=[]):

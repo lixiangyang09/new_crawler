@@ -10,6 +10,15 @@ from seeds import SeedsService
 from store import FileService
 from lxml import html
 
+'//*[@id="introduction"]/div/div/div[2]/div[2]/ul/li[1]/span[2]'
+
+list_time = '(//div[@class="transaction"]//span)[2]/text()'
+
+status_code, url, data = RequestService.normal_request('https://cd.lianjia.com/ershoufang/106100231725.html')
+
+bj_tree = html.fromstring(data)
+
+list_tt = bj_tree.xpath(list_time)
 
 status_code, url, data = RequestService.normal_request('http://210.75.213.188/shh/portal/bjjs/index.aspx')
 

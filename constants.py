@@ -22,6 +22,7 @@ seeds_file = './database/seeds'
 
 chart_data_dir = 'chart_data'
 
+tmp_data_dir = 'tmp'
 # output_base_dir = '/Users/dev/lianjia/result'
 #
 # database_dir = '/Users/dev/lianjia/result'

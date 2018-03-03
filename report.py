@@ -404,6 +404,14 @@ class ReportService:
                     os.remove(constants.notifies_dir + '/' + notify_data)
                     cls.logger.info(f"Remove notify data {constants.notifies_dir + '/' + notify_data}")
 
+        # tmp folder
+        tmp_datas = os.listdir(constants.tmp_data_dir)
+        for tmp_data in tmp_datas:
+            if tmp_data < target_date_str:
+                os.remove(constants.tmp_data_dir + '/' + tmp_data)
+                cls.logger.info(f"Remove tmp data {constants.tmp_data_dir + '/' + tmp_data}")
+
+
     @classmethod
     def work(cls):
         cls.logger.info(f"Start generating report.")
