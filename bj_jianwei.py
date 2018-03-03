@@ -47,7 +47,7 @@ def extract_data(monthly_header, monthly_data, daily_title, daily_header, daily_
 
     final_data.append(monthly_res)
 
-    for i in [0, 2]:
+    for i in [0, 1, 2]:
         tmp = dict()
         tmp['title'] = daily_title[i]
         for j, k in [(0, 0), (1, 1), (3, 2), (4, 3)]:
