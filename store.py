@@ -23,7 +23,8 @@ class RedisService:
 
     @classmethod
     def send_msg(cls, data):
-        cls.producer.send_events(cls.topic, [data])
+        # cls.producer.send_events(cls.topic, [data])
+        pass
 
     @classmethod
     def receive_msg(cls):

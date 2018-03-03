@@ -63,7 +63,7 @@ class ExtractService:
                                 field_value = cls._get_udf_result(seed, field, field_value)
                                 if not field_value:  # after udf, the field should not be empty
                                     tmp_file = str(util.get_uuid())
-                                    FileService.save_file("tmp", tmp_file, web_content)
+                                    # FileService.save_file("tmp", tmp_file, web_content)
                                     logger.warning(f"The filed value is empty after udf. The field: {field}, "
                                                    f"the seed: {seed}. "
                                                    f"Please check the file: {tmp_file} for more details.")

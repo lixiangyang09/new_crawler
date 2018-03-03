@@ -35,7 +35,7 @@ class RunContext:
 
 class CrawlService:
     logger = logging.getLogger(__name__)
-    number_threads = 4
+    number_threads = 6
     semaphore = BoundedSemaphore(number_threads)
     run_context = RunContext()
     seed_wait_time = 2
