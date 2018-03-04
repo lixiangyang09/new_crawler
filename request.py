@@ -28,10 +28,11 @@ class RequestService:
         return result
 
     @classmethod
-    def normal_request(cls, url):
+    def normal_request(cls, url, use_proxy=True):
         """
         Use proxy to request data from url
         :param url:
+        :param use_proxy:
         :return: status code, the new url(maybe redirect), web_content
         """
         ua = cls.get_random_desktop_ua()
@@ -40,7 +41,10 @@ class RequestService:
         data = ""
         status_code = 404
         while True:
-            proxy_instance = ProxyService.get()
+            if use_proxy:
+                proxy_instance = ProxyService.get()
+            else:
+                proxy_instance = None
             try:
                 cls.logger.info(f"In processing seed url {str(url)} with proxy: {str(proxy_instance)}")
                 if proxy_instance:

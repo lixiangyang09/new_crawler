@@ -65,7 +65,8 @@ def save_data(output_data):
 
 
 def crawl_data():
-    status_code, url, data = RequestService.normal_request('http://210.75.213.188/shh/portal/bjjs/index.aspx')
+    status_code, url, data = RequestService.normal_request('http://210.75.213.188/shh/portal/bjjs/index.aspx',
+                                                           use_proxy=False)
 
     bj_tree = html.fromstring(data)
 
