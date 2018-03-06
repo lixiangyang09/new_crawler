@@ -110,10 +110,11 @@ class BJJianweiReport():
 
     @classmethod
     def process_data(cls):
-        data_file_list = os.listdir(util.get_jianwei_data_dir())
+        data_file_list = sorted(os.listdir(util.get_jianwei_data_dir()))
         # 2017-10-09
         file_pattern = re.compile("(\d{4})-(\d{2})-(\d{2})")
         for file in data_file_list:
+            print(file)
             if file_pattern.match(file):
                 data = store.FileService.load_file(os.path.join(util.get_jianwei_data_dir(), file))
                 data_list = ast.literal_eval(data)
