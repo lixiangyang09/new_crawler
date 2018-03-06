@@ -20,7 +20,6 @@ import copy
 import time
 import constants
 import pack_data
-import bj_jianwei_report
 
 if not os.path.exists('log'):
     os.mkdir('log')
@@ -447,6 +446,5 @@ class ReportService:
 
 if __name__ == '__main__':
     ReportService.work()
-    bj_jianwei_report.BJJianweiReport.work()
 
 

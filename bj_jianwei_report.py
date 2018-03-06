@@ -144,7 +144,6 @@ class BJJianweiReport():
         cls.process_data()
         cls.save_chart_data()
 
-
 if __name__ == '__main__':
     BJJianweiReport.work()
 

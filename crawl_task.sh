@@ -10,3 +10,7 @@ python main.py
 echo "gen report"
 python report.py
 
+echo "start crawl jianwei"
+python bj_jianwei.py
+echo "gen jianwei report"
+python bj_jianwei_report.py
