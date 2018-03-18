@@ -355,6 +355,7 @@ class ReportService:
         today_date = datetime.strptime(util.start_date, '%Y-%m-%d')
         target_date = today_date - timedelta(days=keeping_days)
         target_date_str = target_date.strftime('%Y-%m-%d')
+
         # clean the output folder
         data_folders = os.listdir(constants.output_base_dir)
         for data_folder in data_folders:
@@ -421,6 +422,14 @@ class ReportService:
                 os.remove(constants.chart_data_dir + '/' + file)
                 cls.logger.info(f"Remove chart data {constants.chart_data_dir + '/' + file}")
 
+        # cache data
+        cache_datas = os.listdir(CacheService.base_dir)
+        for file in cache_datas:
+            if CacheService.house_cache_file + '_' in file and \
+               file < CacheService.house_cache_file + '_' + target_date_str:
+                os.remove(CacheService.base_dir + '/' + file)
+                cls.logger.info(f"Remove cache data {CacheService.base_dir + '/' + file}")
+                
     @classmethod
     def work(cls):
         cls.logger.info(f"Start generating report.")
