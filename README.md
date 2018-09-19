@@ -1,5 +1,5 @@
 
-
+export PYTHONPATH=/path/to/futile:$PYTHONPATH
 
 
 
