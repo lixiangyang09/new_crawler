@@ -8,4 +8,4 @@ PyYAML==3.12
 redis==2.10.6
 request==0.0.22
 requests==2.18.4
-urllib3==1.22
+urllib3==1.24.2
